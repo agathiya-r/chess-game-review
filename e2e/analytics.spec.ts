@@ -43,7 +43,13 @@ test('selects a sample, pauses, reloads, saves, filters, and retries an engine-b
     await route.continue().catch(() => {});
   });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Bulk Analysis', exact: true }).click();
+  const launcher = page.getByRole('button', { name: 'Bulk Analysis', exact: true });
+  const dialog = page.getByRole('dialog', { name: 'Bulk Analysis', exact: true });
+  const closeBulk = dialog.getByRole('button', { name: 'Close Bulk Analysis' });
+  await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Bulk Analysis' })).toHaveCount(0);
+  await expect(launcher).toHaveAccessibleDescription('0 saved games');
+  await launcher.click();
+  await expect(dialog).toBeVisible();
   await page.getByPlaceholder('Player handle').fill('TestPlayer');
   await expect(page.getByPlaceholder('Player handle')).toHaveValue('TestPlayer');
   await page.getByRole('combobox', { name: 'Time control', exact: true }).selectOption('rapid');
@@ -53,10 +59,25 @@ test('selects a sample, pauses, reloads, saves, filters, and retries an engine-b
   await expect(entries).toHaveCount(3);
   await entries.first().uncheck();
   await expect(page.getByRole('button', { name: 'Analyze 2 selected' })).toBeEnabled();
+  await closeBulk.click();
+  await expect(dialog).toBeHidden();
+  await expect(launcher).toBeFocused();
+  await launcher.click();
+  await expect(entries.first()).not.toBeChecked();
   await page.getByRole('combobox', { name: 'Analysis preset', exact: true }).selectOption('fast');
   await page.getByRole('combobox', { name: 'Engine workers', exact: true }).selectOption('1');
   await page.getByRole('button', { name: 'Analyze 2 selected' }).click();
   await expect(page.getByText('Searching positions', { exact: false })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(launcher).toHaveAccessibleDescription(/% complete/);
+  await expect(launcher.getByRole('progressbar')).toBeVisible();
+  await page.getByRole('button', { name: 'Dashboard', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Player dashboard' })).toBeVisible();
+  await expect(launcher.getByRole('progressbar')).toBeVisible();
+  await launcher.click();
+  await dialog.getByRole('button', { name: 'Batch queue', exact: true }).click();
+  await expect(dialog.getByRole('region', { name: 'Batch queue', exact: true })).toBeFocused();
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
   await expect(page.getByText('Paused', { exact: true })).toBeVisible();
   release();
@@ -66,6 +87,8 @@ test('selects a sample, pauses, reloads, saves, filters, and retries an engine-b
   await expect(page.getByText('2 saved · 0 reused · 0 failed', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'View results', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Player dashboard' })).toBeVisible();
+  await expect(dialog).toBeHidden();
+  await expect(launcher).toHaveAccessibleDescription('2 saved games');
   await expect(page.getByText('2 of 2 saved games', { exact: false })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(await page.evaluate(() => window.innerWidth));
   await expect(page.getByRole('img', { name: 'Accuracy history chart' }).locator('canvas')).toBeVisible();
@@ -175,12 +198,14 @@ test('imports the CLI format and keeps duplicate imports out of the sample', asy
   await page.goto('/?view=bulk');
   await page.getByPlaceholder('Player handle').fill('TestPlayer');
   await page.getByRole('button', { name: 'Fetch games' }).click();
-  await expect(page.getByRole('button', { name: 'Deselect player' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Analyze 4 selected' })).toBeEnabled();
   await page.getByRole('combobox', { name: 'Analysis preset' }).selectOption('fast');
   await page.getByLabel('Import analysis file').setInputFiles({
     name: 'games.jsonl', mimeType: 'application/x-ndjson', buffer: Buffer.from(text),
   });
   await expect(page.getByText('1 imported · 1 already saved · 1 invalid')).toBeVisible();
+  await page.getByRole('button', { name: 'Close Bulk Analysis' }).click();
+  await expect(page.getByRole('button', { name: 'Bulk Analysis', exact: true })).toHaveAccessibleDescription('1 saved game');
   await page.getByRole('button', { name: 'Dashboard', exact: true }).click();
   await expect(page.getByText('1 of 1 saved games', { exact: false })).toBeVisible();
 });
@@ -196,6 +221,7 @@ test('keeps one profile across tabs and includes independent reviews in the shar
   await page.getByRole('button', { name: 'Fetch games' }).click();
   await expect(page.getByRole('button', { name: 'Analyze 2 selected' })).toBeEnabled();
   await page.getByRole('combobox', { name: 'Analysis preset' }).selectOption('fast');
+  await page.getByRole('button', { name: 'Close Bulk Analysis' }).click();
 
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
   for (const tab of ['Dashboard', 'Openings', 'Weaknesses']) {
@@ -220,6 +246,7 @@ test('keeps one profile across tabs and includes independent reviews in the shar
   await page.getByRole('button', { name: 'Back to games' }).click();
   await nav.getByRole('button', { name: 'Dashboard', exact: true }).click();
   await expect(page.getByText('0 of 1 saved games', { exact: false })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Bulk Analysis', exact: true })).toHaveAccessibleDescription('1 saved game');
   await page.locator('summary').filter({ hasText: 'Analysis sample', visible: true }).click();
   await page.getByRole('button', { name: 'Reset filters' }).click();
   await expect(page.getByText('1 of 1 saved games', { exact: false })).toBeVisible();
@@ -231,7 +258,7 @@ test('keeps one profile across tabs and includes independent reviews in the shar
   await page.getByPlaceholder('Player handle').fill('OtherPlayer');
   await page.getByRole('button', { name: 'Fetch games' }).click();
   await expect(page.getByRole('button', { name: 'Analyze 1 selected' })).toBeEnabled();
-  await nav.getByRole('button', { name: 'Dashboard', exact: true }).click();
+  await page.getByRole('button', { name: 'Close Bulk Analysis' }).click();
   await expect(page.getByText('0 of 0 saved games', { exact: false })).toBeVisible();
 
   // Selecting the original account brings back its saved review.
@@ -240,7 +267,7 @@ test('keeps one profile across tabs and includes independent reviews in the shar
   await page.getByRole('button', { name: 'Fetch games' }).click();
   await expect(page.getByRole('button', { name: 'Analyze 4 selected' })).toBeEnabled();
   await page.getByRole('combobox', { name: 'Analysis preset' }).selectOption('fast');
-  await nav.getByRole('button', { name: 'Dashboard', exact: true }).click();
+  await page.getByRole('button', { name: 'Close Bulk Analysis' }).click();
   await expect(page.getByText('1 of 1 saved games', { exact: false })).toBeVisible();
 });
 
@@ -261,6 +288,7 @@ test('saves a matching Lichess link under its provider game ID', async ({ page }
   await page.getByRole('button', { name: 'Fetch games' }).click();
   await expect(page.getByRole('button', { name: 'Analyze 1 selected' })).toBeEnabled();
   await page.getByRole('combobox', { name: 'Analysis preset' }).selectOption('fast');
+  await page.getByRole('button', { name: 'Close Bulk Analysis' }).click();
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
   await nav.getByRole('button', { name: 'Games', exact: true }).click();
   await page.getByRole('button', { name: 'Change', exact: true }).click();
@@ -269,7 +297,7 @@ test('saves a matching Lichess link under its provider game ID', async ({ page }
   await page.getByRole('button', { name: 'Review game' }).click();
   await expect(page.getByText('Saved to player analytics', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Back to games' }).click();
-  await nav.getByRole('button', { name: 'Bulk Analysis', exact: true }).click();
+  await page.getByRole('button', { name: 'Bulk Analysis', exact: true }).click();
   await page.getByRole('button', { name: 'Analyze 1 selected' }).click();
   await expect(page.getByText('1 saved · 1 reused', { exact: false })).toBeVisible();
 });
@@ -300,7 +328,7 @@ test('opens a brilliant move from a new or older saved review', async ({ page })
   await page.goto('/?view=bulk');
   await page.getByPlaceholder('Player handle').fill('TestPlayer');
   await page.getByRole('button', { name: 'Fetch games' }).click();
-  await expect(page.getByRole('button', { name: 'Deselect player' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Analyze 4 selected' })).toBeEnabled();
   await page.getByRole('combobox', { name: 'Analysis preset' }).selectOption('fast');
   await page.getByLabel('Import analysis file').setInputFiles({
     name: 'brilliant.jsonl', mimeType: 'application/x-ndjson',

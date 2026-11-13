@@ -4,9 +4,6 @@ const arrangements = {
   review: [
     { piece: 'wN', square: 'f5' }, { piece: 'bR', square: 'g8' }, { piece: 'bP', square: 'h6' },
   ],
-  bulk: [
-    { piece: 'wR', square: 'e5' }, { piece: 'wP', square: 'd4' }, { piece: 'bR', square: 'g8' },
-  ],
   dashboard: [
     { piece: 'wN', square: 'f5' }, { piece: 'bQ', square: 'g7' }, { piece: 'bP', square: 'd6' },
   ],

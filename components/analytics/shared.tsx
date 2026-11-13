@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { StoredSummary } from '@/lib/analytics/model';
 import type { Color, TimeClass } from '@/lib/games/types';
 
-export type AnalyticsPage = 'bulk' | 'dashboard' | 'openings' | 'weaknesses';
+export type AnalyticsPage = 'dashboard' | 'openings' | 'weaknesses';
 export type OpenReview = (row: StoredSummary, color: Color, ply?: number, retry?: boolean) => void;
 export const TIME_CLASSES: TimeClass[] = ['bullet', 'blitz', 'rapid', 'classical', 'daily', 'unknown'];
 export const titleCase = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
@@ -13,15 +13,16 @@ export const platform = (source: string) => source === 'chesscom' ? 'Chess.com' 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return <label className="grid min-w-0 gap-1.5 text-xs font-semibold text-muted">{label}{children}</label>;
 }
-export function Section({ id, title, detail, icon, className, children }: {
+export function Section({ id, tabIndex, title, detail, icon, className, children }: {
   id?: string;
+  tabIndex?: number;
   title: string;
   detail?: string;
   icon?: ReactNode;
   className?: string;
   children: ReactNode;
 }) {
-  return <section id={id} aria-label={title} className={`analytics-section card min-w-0 ${className ?? ''}`}>
+  return <section id={id} tabIndex={tabIndex} aria-label={title} className={`analytics-section card min-w-0 ${className ?? ''}`}>
     <div className="flex items-center gap-2.5">
       {icon && <span aria-hidden="true" className="analytics-section-icon">{icon}</span>}
       <h2 className="text-lg font-bold tracking-tight sm:text-xl">{title}</h2>

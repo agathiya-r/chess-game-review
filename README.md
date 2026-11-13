@@ -47,13 +47,15 @@ npm ci
 npm run dev
 ```
 
-Open **Bulk Analysis**, choose Chess.com or Lichess, and enter your public
+Open **Bulk Analysis** above the player card, choose Chess.com or Lichess, and enter your public
 username. Select **Rapid** and **100** to fetch your latest 100 finished rapid
 games, or use the date and rated filters to build a different sample. Games are
 selected when loaded; use the checkboxes to change the batch. Pick an analysis
 preset and a worker count, then choose **Analyze selected**. Start with 10 games
 if you want to see results quickly.
 
+The launcher shows your cached game count and switches to live progress while
+a batch runs. You can close the panel and use the other pages during analysis.
 The queue reports saved, reused, failed, and pending games. **Pause** stops the
 current search. **Resume** restarts the interrupted game and skips work already
 committed. A closed browser does not keep analyzing. To search deeper, select

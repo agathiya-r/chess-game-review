@@ -1,8 +1,8 @@
 'use client';
 
-import { PageHero } from '@/components/PageHero';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, Database, Download, ListChecks } from 'lucide-react';
+import { batchItemCounts } from '@/lib/analytics/jobs';
 import { collectHistory, dateLabel, gameDate } from '@/lib/analytics/history';
 import { analyticsStore, StorageError } from '@/lib/analytics/store';
 import { analysisId, MAX_BATCH_GAMES, playerColor, playerKey, completedResult, PRESET_ORDER, type BatchJob } from '@/lib/analytics/model';
@@ -136,8 +136,7 @@ export function BulkPanel({ analytics, initialAccount, profile, onProfileChange,
   };
 
   return <div className="grid gap-5">
-    <PageHero variant="bulk" title="Bulk analysis" description="Find games from your public history and queue them for Stockfish." />
-    <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); void search(); }}>
+    <form id="bulk-game-filters" tabIndex={-1} className="grid gap-3" onSubmit={(e) => { e.preventDefault(); void search(); }}>
       <SampleDisclosure filters={filters} preset={profile ? titleCase(depth) : undefined} initiallyOpen
         detail={profile ? 'Choose which games to fetch. These filters also apply to your dashboard.'
           : 'Fetch games to set your active player.'}>
@@ -194,7 +193,7 @@ export function BulkPanel({ analytics, initialAccount, profile, onProfileChange,
       <p className="mt-3 text-xs text-muted">{DEPTH_PRESETS[depth].hint}. Finished games at this preset are reused. Choose a deeper preset to analyze the same selection again.</p>
     </Section>}
 
-    <Section title="Batch queue" icon={<Database size={20} />} detail="Analysis runs while this app is open. After a reload, resume an unfinished batch to continue.">
+    <Section id="bulk-batch-queue" tabIndex={-1} title="Batch queue" icon={<Database size={20} />} detail="Analysis runs while this app is open. After a reload, resume an unfinished batch to continue.">
       {analytics.error && <div role="alert" className="mb-4 rounded-lg border border-danger/50 p-3 text-sm">{analytics.error}
         {!analytics.ready && <button className="ml-2 underline" onClick={() => void analytics.reload()}>Retry loading</button>}
       </div>}
@@ -227,8 +226,7 @@ function JobStatus({ job, analytics, onDashboard, onReview }: {
   const active = analytics.active === job.id;
   const recoverable = ['queued', 'paused', 'running'].includes(job.status);
   const progress = analytics.progress?.jobId === job.id ? analytics.progress : null;
-  const counts = { pending: 0, done: 0, reused: 0, failed: 0, cancelled: 0 };
-  for (const item of job.items) counts[item.status]++;
+  const counts = batchItemCounts(job);
   const completed = counts.done + counts.reused;
   const processed = completed + counts.failed + counts.cancelled;
   const shown = onlyFailed ? job.items.filter((i) => i.status === 'failed') : job.items;
@@ -309,7 +307,7 @@ function ImportPanel({ onSaved }: { onSaved: AnalyticsState['saved'] }) {
       setBusy(false);
     }
   };
-  return <Section title="Import CLI analyses" icon={<Download size={20} />} detail="Add a versioned JSONL file produced by the player analysis command. Existing compatible games are kept.">
+  return <Section id="bulk-import" tabIndex={-1} title="Import CLI analyses" icon={<Download size={20} />} detail="Add a versioned JSONL file produced by the player analysis command. Existing compatible games are kept.">
     <input className="input max-w-full text-sm" type="file" aria-label="Import analysis file" accept=".jsonl,.ndjson"
       disabled={busy} onChange={(e) => {
         const file = e.target.files?.[0];

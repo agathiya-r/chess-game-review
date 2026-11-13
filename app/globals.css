@@ -410,8 +410,8 @@ a {
 
   .app-brand-row { @apply flex min-h-13 items-center justify-between gap-2 px-4; }
   .app-engine-status { @apply text-xs font-medium text-muted; }
-  .app-nav-links { @apply grid grid-cols-5 gap-0.5 px-2 pb-2; }
-  .app-profile { @apply border-t border-line px-3 py-2; }
+  .app-nav-links { @apply grid grid-cols-4 gap-0.5 px-2 pb-2; }
+  .app-profile { @apply grid gap-1.5 border-t border-line px-3 py-2; }
 
   .app-nav-links .analytics-nav-item {
     @apply flex min-w-0 flex-col items-center gap-1 px-0.5 text-[10px] sm:flex-row sm:justify-center sm:gap-2 sm:px-2.5 sm:text-sm;
@@ -429,6 +429,45 @@ a {
   .active-player-empty:hover { @apply bg-surface-3; }
   .active-player-icon { @apply grid size-9 shrink-0 place-items-center rounded-md bg-surface-3 text-accent-strong; }
 
+  .bulk-launcher {
+    @apply flex min-h-12 w-full items-center gap-2.5 rounded-lg border border-line bg-bg px-2 py-1.5 text-left;
+  }
+
+  .bulk-launcher:hover,
+  .bulk-launcher[aria-expanded='true'] { @apply border-accent/50 bg-surface-2; }
+  .bulk-launcher-icon {
+    @apply grid size-8 shrink-0 place-items-center rounded-md bg-accent/15 text-accent-strong;
+  }
+  .bulk-launcher-progress {
+    @apply mt-1 block h-1 w-full overflow-hidden rounded-full bg-surface-3 accent-accent;
+    appearance: none;
+  }
+  .bulk-launcher-progress::-webkit-progress-bar { @apply rounded-full bg-surface-3; }
+  .bulk-launcher-progress::-webkit-progress-value { @apply rounded-full bg-accent; }
+  .bulk-launcher-progress::-moz-progress-bar { @apply rounded-full bg-accent; }
+
+  .bulk-dialog {
+    @apply fixed inset-x-0 top-auto bottom-0 m-0 w-full max-w-none overflow-hidden rounded-t-2xl border border-line bg-bg p-0 text-fg shadow-2xl;
+    max-height: 92dvh;
+  }
+  .bulk-dialog::backdrop { background: #120f0de0; }
+  html:has(.bulk-dialog[open]) { overflow: hidden; }
+  .bulk-dialog-shell { @apply flex min-h-0 max-h-[inherit] flex-col; }
+  .bulk-dialog-header {
+    @apply shrink-0 border-b border-line bg-surface px-4 pt-2.5 pb-3 sm:px-6;
+  }
+  .bulk-dialog-shortcuts { @apply mt-2 flex flex-wrap gap-2; }
+  .bulk-dialog-shortcuts button {
+    @apply min-h-9 rounded-md border border-line bg-surface-2 px-3 text-xs font-semibold text-muted;
+  }
+  .bulk-dialog-shortcuts button:hover { @apply border-accent/50 text-fg; }
+  .bulk-dialog-content {
+    @apply m-0 w-full max-w-none min-h-0 overflow-y-auto overscroll-contain pt-4;
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+    scrollbar-gutter: stable;
+  }
+  .bulk-dialog-content :is(#bulk-game-filters, #bulk-batch-queue, #bulk-import) { scroll-margin-top: 1rem; }
+
   @media (min-width: 1024px) {
     .app-shell-with-rail {
       display: grid;
@@ -445,6 +484,12 @@ a {
     .app-shell-with-rail .app-nav-links .analytics-nav-item { @apply w-full justify-start px-3 py-2.5; }
     .app-shell-with-rail .app-profile { @apply mt-auto border-0 px-2 pb-4; }
     .app-shell-with-rail .app-footer { grid-column: 2; }
+    .bulk-dialog {
+      @apply top-3 right-auto bottom-auto rounded-xl;
+      left: 14.25rem;
+      width: min(48rem, calc(100vw - 15rem));
+      max-height: calc(100dvh - 1.5rem);
+    }
   }
 }
 

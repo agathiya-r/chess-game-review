@@ -11,10 +11,10 @@ export function ProfileFilters({ values, onChange }: {
 
   return <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
     <Field label="Time control"><select className="input" value={values.time ?? ''} onChange={(e) => update({ time: (e.target.value || undefined) as TimeClass | undefined })}>
-      <option value="">Any time control</option>{TIME_CLASSES.map((v) => <option key={v} value={v}>{titleCase(v)}</option>)}
+      <option value="">Any speed</option>{TIME_CLASSES.map((v) => <option key={v} value={v}>{titleCase(v)}</option>)}
     </select></Field>
     <Field label="Rated status"><select className="input" value={values.rated === undefined ? '' : String(values.rated)} onChange={(e) => update({ rated: e.target.value ? e.target.value === 'true' : undefined })}>
-      <option value="">Rated and unrated</option><option value="true">Rated only</option><option value="false">Unrated only</option>
+      <option value="">Any status</option><option value="true">Rated only</option><option value="false">Unrated only</option>
     </select></Field>
     <Field label="From (UTC)"><input className="input" type="date" max={values.through} value={values.from ?? ''} onChange={(e) => update({ from: e.target.value || undefined })} /></Field>
     <Field label="Through (UTC)"><input className="input" type="date" min={values.from} value={values.through ?? ''} onChange={(e) => update({ through: e.target.value || undefined })} /></Field>

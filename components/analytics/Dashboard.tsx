@@ -20,7 +20,7 @@ import { Conditions, groupers, groupLabels, PhasePerformance, type Group } from 
 import { AccuracyChart } from './AccuracyChart';
 import { Empty, Field, Section, Table, num, pct, titleCase, type AnalyticsPage, type OpenReview } from './shared';
 
-type DashboardPage = Exclude<AnalyticsPage, 'bulk'>;
+type DashboardPage = AnalyticsPage;
 const pageInfo = {
   dashboard: { title: 'Player dashboard', description: 'Track your accuracy, compare conditions, and open any game behind the numbers.' },
   openings: { title: 'Opening performance', description: 'See how you play in the opening and what happens in the rest of those games.' },

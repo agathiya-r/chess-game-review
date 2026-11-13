@@ -13,6 +13,12 @@ export interface BatchProgress {
   fraction: number;
   stage: 'search' | 'deep';
 }
+export function batchItemCounts(job: BatchJob) {
+  const counts = { pending: 0, done: 0, reused: 0, failed: 0, cancelled: 0 };
+  for (const item of job.items) counts[item.status]++;
+  return counts;
+}
+
 type Command = 'pause' | 'cancel';
 type RunOptions = {
   update: (job: BatchJob) => void;

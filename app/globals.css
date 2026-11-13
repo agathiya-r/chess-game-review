@@ -632,7 +632,10 @@ a {
   }
 
   .comparison-options { @apply mb-4 flex flex-wrap gap-1.5; }
-  .comparison-options button { @apply rounded-md border border-line px-3 py-1.5 text-xs font-semibold text-muted hover:bg-surface-3; }
+  .comparison-options button { @apply inline-flex min-h-9 items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-xs font-semibold text-muted hover:bg-surface-3; }
+  .comparison-options button > svg { @apply shrink-0; }
+  .comparison-options .chess-side-icon { @apply size-5 border-0 bg-transparent; }
+  .comparison-options .chess-side-icon svg { @apply size-3; }
   .comparison-options button[aria-pressed='true'] {
     @apply text-accent-strong;
     border-color: #81b64c66;
@@ -643,6 +646,17 @@ a {
   .condition-row { @apply grid min-w-0 gap-2.5 p-3.5 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,2fr)] md:items-center md:gap-5; }
   .condition-row + .condition-row:nth-child(even) { background: #ffffff03; }
   .condition-accuracy { @apply min-w-0; }
+  .condition-icon, .chess-side-icon {
+    @apply inline-flex size-9 shrink-0 items-center justify-center rounded-lg border;
+    border-color: #ffffff15;
+    background: #ffffff0a;
+    color: #a2c7df;
+  }
+  .chess-side-icon svg { @apply size-[1.35rem] shrink-0; }
+  .chess-side-icon svg + svg { margin-inline-start: -.45rem; }
+  .condition-icon[data-result='win'] { color: #b5d58d; }
+  .condition-icon[data-result='loss'] { color: #ffada5; }
+  .condition-icon[data-result='draw'] { color: #d6d3c8; }
 
   .analytics-disclosure { @apply min-w-0; }
   .analytics-disclosure-summary {
@@ -658,9 +672,9 @@ a {
 
   .library-entry { @apply px-3 py-2.5 sm:px-4; }
   .library-game { @apply grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 sm:gap-4; }
-  .library-accuracy, .opening-accuracy { @apply grid shrink-0 gap-0.5 text-right; }
-  .library-accuracy strong, .opening-accuracy strong { @apply text-base leading-tight font-bold text-accent-strong tabular-nums; }
-  .library-accuracy > span, .opening-accuracy > span { @apply text-xs leading-tight text-muted; }
+  .library-accuracy { @apply grid shrink-0 gap-0.5 text-right; }
+  .library-accuracy strong { @apply text-base leading-tight font-bold text-accent-strong tabular-nums; }
+  .library-accuracy > span { @apply text-xs leading-tight text-muted; }
   .game-result { @apply shrink-0 rounded-sm bg-surface-3 px-1.5 py-0.5 text-xs font-semibold text-muted; }
   .game-result[data-result='win'] { background: #81b64c21; color: #c0e59a; }
   .game-result[data-result='loss'] { background: #e5534b22; color: #ffada5; }
@@ -671,25 +685,49 @@ a {
   .library-game-details .analytics-stat-strip { @apply my-1.5 rounded-md bg-surface-2 p-2.5; }
 
   .analytics-action { @apply inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-xs font-semibold text-fg hover:bg-surface-3; }
+  .opening-grid { @apply grid items-start gap-3 md:grid-cols-2; }
+  .opening-entry {
+    @apply min-w-0 overflow-hidden rounded-lg border border-line;
+    background: linear-gradient(135deg, #3b3428, var(--color-bg) 48%);
+  }
   .opening-summary {
-    @apply grid cursor-pointer grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2.5 px-3.5 py-3 hover:bg-surface-2 sm:gap-4;
+    @apply grid cursor-pointer gap-2.5 p-3.5 hover:bg-surface-2/60 sm:p-4;
     list-style: none;
   }
-  .opening-entry[open] > .opening-summary { @apply bg-surface-2; }
-  .opening-details { @apply grid gap-3 border-t border-line p-3.5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,2fr)] lg:items-center; }
-  .opening-result-bar { @apply flex h-1.5 overflow-hidden rounded-full bg-surface-3; }
-  .opening-result-bar span { flex-basis: 0; }
-  .opening-result-bar span[data-result='win'] { background: #81b64c; }
-  .opening-result-bar span[data-result='draw'] { background: #aaa398; }
-  .opening-result-bar span[data-result='loss'] { background: #e87b6f; }
-  .opening-results strong { @apply text-fg tabular-nums; }
+  .opening-summary:focus-visible { outline-offset: -3px; }
+  .opening-entry[open] > .opening-summary { @apply bg-surface-2/60; }
+  .opening-identity { @apply flex items-start gap-2.5; }
+  .opening-identity .chess-side-icon { @apply size-10; }
+  .opening-meta { @apply mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted; }
+  .opening-eco { @apply rounded bg-surface-3 px-1.5 py-0.5 font-mono font-semibold text-[#e8ca8c]; }
+  .opening-score { @apply flex items-center justify-between gap-2 border-t border-line pt-2.5; }
+  .opening-score-label { @apply inline-flex items-center gap-1.5 text-xs font-semibold text-muted; }
+  .opening-score strong { @apply text-xl leading-tight font-bold text-accent-strong tabular-nums; }
+  .opening-outcomes { @apply grid grid-cols-3 gap-1 rounded-md bg-bg/75 py-1.5; }
+  .opening-outcomes > span { @apply inline-flex items-center justify-center gap-1 text-xs text-muted; }
+  .opening-outcomes > span svg { @apply shrink-0; }
+  .opening-outcomes strong { @apply text-fg tabular-nums; }
+  .opening-outcomes [data-result='win'] svg { color: #b5d58d; }
+  .opening-outcomes [data-result='loss'] svg { color: #ffada5; }
+  .opening-details { @apply border-t border-line bg-bg p-3.5 sm:p-4; }
 
-  .practice-list { @apply grid gap-2.5; }
-  .practice-topic { @apply rounded-lg border border-line bg-bg; }
-  .practice-topic[open] > .analytics-disclosure-summary { @apply bg-surface-2; }
-  .practice-drill { @apply rounded-md border-l-2 border-accent p-3; background: #81b64c10; }
-  .practice-confidence { @apply shrink-0 rounded-sm px-1.5 py-1 text-xs font-semibold text-muted; background: #ffffff0b; }
-  .practice-confidence[data-confidence='possible'] { color: #e8ca8c; }
+  .practice-list { @apply grid gap-3; }
+  .practice-topic {
+    @apply min-w-0 rounded-lg border border-line;
+    background: radial-gradient(ellipse at 0 0, #384232, transparent 68%), var(--color-bg);
+  }
+  .practice-topic-header { @apply flex flex-wrap items-center gap-2.5 px-3.5 pt-3.5 sm:gap-3 sm:px-4 sm:pt-4; }
+  .practice-topic-header > div { @apply flex-1; }
+  .practice-topic-icon { @apply grid size-10 shrink-0 place-items-center rounded-lg text-accent-strong; background: #81b64c22; }
+  .practice-start { @apply inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-bold sm:ml-auto sm:w-auto; background: #95c95d; color: #18210e; }
+  .practice-start:hover { background: #a9d97b; }
+  .practice-tip { @apply flex items-start gap-2 px-3.5 pt-3 pb-3.5 text-sm leading-relaxed text-muted sm:px-4; }
+  .practice-tip svg { @apply mt-0.5 shrink-0 text-[#e8ca8c]; }
+  .practice-examples { @apply border-t border-line; }
+  .practice-examples > summary { @apply flex cursor-pointer items-center gap-2 rounded-b-lg px-3.5 py-2.5 text-sm font-semibold hover:bg-surface-2 sm:px-4; list-style: none; }
+  .practice-examples > summary::-webkit-details-marker { display: none; }
+  .practice-examples > summary > svg:first-child { @apply text-muted; }
+  .practice-examples-body { @apply px-3.5 pb-3.5 sm:px-4 sm:pb-4; }
   .practice-position { @apply grid min-w-0 gap-2 px-3 py-2.5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-4; }
   .practice-move { @apply font-mono text-sm text-[#e8ca8c]; }
   .practice-retry { border-color: #81b64c59; background: #81b64c14; color: var(--color-accent-strong); }

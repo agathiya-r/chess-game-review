@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, ChevronDown } from 'lucide-react';
+import { BookOpen, ChevronDown, Flag, Gauge, Layers3, Minus, Trophy, X } from 'lucide-react';
 import { aggregate, groupSample, ratio, type SampleGame } from '@/lib/analytics/stats';
+import { ChessSideIcon } from './ChessSideIcon';
 import { Empty, Field, num, pct, Section, StatStrip } from './shared';
 
 const PAGE_SIZE = 16;
@@ -57,43 +58,49 @@ export function OpeningRepertoire({ rows }: { rows: SampleGame[] }) {
         </label>
       </div>
       {!groups.length ? <Empty>No openings match this search and minimum game count.</Empty> : (
-        <div className="analytics-feed">
+        <div className="opening-grid">
           {groups.slice(current * PAGE_SIZE, (current + 1) * PAGE_SIZE).map(({ id, opening, color, stats, openingStats }) => {
             const study = stats.n >= 5 && openingStats.totals.graded >= 20 && baseline !== null
               && openingStats.moveAccuracy !== null && openingStats.moveAccuracy <= baseline - 8;
             return (
               <details key={id} className="opening-entry">
                 <summary className="opening-summary">
-                  <span className="min-w-0">
-                    <span className="block text-sm font-bold">{opening.name}</span>
-                    <span className="mt-1 block text-xs text-muted">
-                      {[opening.eco, split ? color === 'w' ? 'White' : 'Black' : 'Both colors',
-                        `${stats.n} ${stats.n === 1 ? 'game' : 'games'}`].filter(Boolean).join(' · ')}
+                  <span className="opening-identity">
+                    <ChessSideIcon color={split ? color : undefined} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block break-words text-sm font-bold">{opening.name}</span>
+                      <span className="opening-meta">
+                        {opening.eco && <span className="opening-eco">{opening.eco}</span>}
+                        <span>{split ? color === 'w' ? 'White' : 'Black' : 'Both colors'}</span>
+                        <span className="inline-flex items-center gap-1"><Layers3 size={12} aria-hidden="true" />
+                          {stats.n.toLocaleString()} {stats.n === 1 ? 'game' : 'games'}
+                        </span>
+                      </span>
+                      {study && <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[#e8ca8c]">
+                        <Flag size={13} aria-hidden="true" /> Worth reviewing
+                      </span>}
                     </span>
-                    {study && <span className="mt-1 inline-block text-xs font-semibold text-[#e8ca8c]">Worth reviewing</span>}
+                    <ChevronDown size={16} className="analytics-chevron" aria-hidden="true" />
                   </span>
-                  <span className="opening-accuracy">
-                    <strong>{pct(openingStats.moveAccuracy)}</strong><span>Opening accuracy</span>
+                  <span className="opening-score">
+                    <span className="opening-score-label"><Gauge size={15} aria-hidden="true" /> Opening accuracy</span>
+                    <strong>{pct(openingStats.moveAccuracy)}</strong>
                   </span>
-                  <ChevronDown size={16} className="analytics-chevron" aria-hidden="true" />
+                  <span className="comparison-track" aria-hidden="true">
+                    {openingStats.moveAccuracy !== null && <span style={{ width: `${openingStats.moveAccuracy}%` }} />}
+                  </span>
+                  <span className="opening-outcomes">
+                    <span data-result="win"><Trophy size={14} aria-hidden="true" /> <strong>{stats.wins}</strong> won</span>
+                    <span data-result="draw"><Minus size={14} aria-hidden="true" /> <strong>{stats.draws}</strong> drew</span>
+                    <span data-result="loss"><X size={14} aria-hidden="true" /> <strong>{stats.losses}</strong> lost</span>
+                  </span>
                 </summary>
                 <div className="opening-details">
-                  <div className="opening-results">
-                    {stats.knownResults > 0 ? <>
-                      <div className="opening-result-bar" aria-hidden="true">
-                        {([['win', stats.wins], ['draw', stats.draws], ['loss', stats.losses]] as const).map(([result, count]) => (
-                          count > 0 && <span key={result} data-result={result} style={{ flexGrow: count }} />
-                        ))}
-                      </div>
-                      <p className="mt-2 flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs text-muted">
-                        <span>Won <strong>{pct(stats.winPct)}</strong></span>
-                        <span>Drew <strong>{pct(ratio(stats.draws * 100, stats.knownResults))}</strong></span>
-                        <span>Lost <strong>{pct(ratio(stats.losses * 100, stats.knownResults))}</strong></span>
-                      </p>
-                    </> : <p className="text-xs text-muted">No recorded results.</p>}
-                  </div>
                   <StatStrip entries={[
                     ['Graded opening moves', openingStats.totals.graded],
+                    ['Win rate', pct(stats.winPct)],
+                    ['Draw rate', pct(ratio(stats.draws * 100, stats.knownResults))],
+                    ['Loss rate', pct(ratio(stats.losses * 100, stats.knownResults))],
                     ['Game accuracy', pct(stats.accuracy)],
                     ['Opponent accuracy', pct(stats.opponentAccuracy)],
                     ['Blunders per game', num(stats.blunders, 2)],

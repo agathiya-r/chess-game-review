@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { Activity, Flag, Layers3, Swords, Timer } from 'lucide-react';
+import {
+  Activity, CalendarDays, CircleHelp, Clock3, Flag, Gauge, Hourglass, Layers3, ListOrdered, Minus,
+  Rocket, Swords, Timer, Trophy, X, Zap, type LucideIcon,
+} from 'lucide-react';
+import { ChessSideIcon } from './ChessSideIcon';
 import { aggregate, groupSample, PHASES, type SampleGame } from '@/lib/analytics/stats';
 import { gameLength, ratingBracket } from '@/lib/analytics/filters';
 import { Empty, num, pct, Section, StatStrip, titleCase } from './shared';
@@ -16,6 +20,22 @@ export type Group = keyof typeof groupers;
 export const groupLabels: Record<Group, string> = {
   color: 'Color', time: 'Time control', result: 'Result', rating: 'Opponent rating', length: 'Game length', month: 'Month',
 };
+
+const groupIcons: Record<Group, LucideIcon> = {
+  color: Layers3, time: Clock3, result: Trophy, rating: Gauge, length: ListOrdered, month: CalendarDays,
+};
+const timeIcons: Record<string, LucideIcon> = {
+  Bullet: Rocket, Blitz: Zap, Rapid: Timer, Classical: Hourglass, Daily: CalendarDays,
+};
+const resultIcons: Record<string, LucideIcon> = { Win: Trophy, Draw: Minus, Loss: X };
+
+function ConditionIcon({ group, label }: { group: Group; label: string }) {
+  if (group === 'color') return <ChessSideIcon color={label === 'White' ? 'w' : 'b'} />;
+  const Icon = group === 'time' ? timeIcons[label] ?? CircleHelp
+    : group === 'result' ? resultIcons[label] ?? CircleHelp
+    : groupIcons[group];
+  return <span className="condition-icon" data-result={group === 'result' ? label.toLowerCase() : undefined} aria-hidden="true"><Icon size={17} /></span>;
+}
 
 const phaseIcons = { opening: Flag, middlegame: Swords, endgame: Timer };
 const phaseTones = { opening: 'green', middlegame: 'gold', endgame: 'blue' };
@@ -60,11 +80,15 @@ export function Conditions({ rows }: { rows: SampleGame[] }) {
   return (
     <Section title="Performance by condition" icon={<Activity size={20} />}>
       <div role="group" aria-label="Group games by" className="comparison-options">
-        {(Object.keys(groupLabels) as Group[]).map((value) => (
-          <button key={value} type="button" aria-pressed={group === value} onClick={() => setGroup(value)}>
-            {groupLabels[value]}
-          </button>
-        ))}
+        {(Object.keys(groupLabels) as Group[]).map((value) => {
+          const Icon = groupIcons[value];
+          return (
+            <button key={value} type="button" aria-pressed={group === value} onClick={() => setGroup(value)}>
+              {value === 'color' ? <ChessSideIcon /> : <Icon size={15} aria-hidden="true" />}
+              {groupLabels[value]}
+            </button>
+          );
+        })}
       </div>
       {groups.length ? (
         <ul className="analytics-feed">
@@ -73,11 +97,14 @@ export function Conditions({ rows }: { rows: SampleGame[] }) {
 
             return (
               <li className="condition-row" key={label}>
-                <div className="min-w-0">
-                  <h3 className="break-words text-sm font-bold">{label}</h3>
-                  <p className="mt-0.5 text-xs text-muted">
-                    {a.n.toLocaleString()} {a.n === 1 ? 'game' : 'games'}{a.n < 5 && ' · Small sample'}
-                  </p>
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <ConditionIcon group={group} label={label} />
+                  <div className="min-w-0">
+                    <h3 className="break-words text-sm font-bold">{label}</h3>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {a.n.toLocaleString()} {a.n === 1 ? 'game' : 'games'}{a.n < 5 && ' · Small sample'}
+                    </p>
+                  </div>
                 </div>
                 <div className="condition-accuracy">
                   <div className="flex items-baseline justify-between gap-2 text-xs text-muted">

@@ -91,7 +91,10 @@ test('selects a sample, pauses, reloads, saves, filters, and retries an engine-b
   await page.getByRole('button', { name: 'Openings', exact: true }).click();
   const repertoire = page.getByRole('region', { name: 'Opening repertoire' });
   await repertoire.getByRole('spinbutton', { name: 'Minimum games' }).fill('1');
-  await repertoire.locator('.opening-summary').first().click();
+  const opening = repertoire.locator('.opening-summary').first();
+  await expect(opening.getByText('Opening accuracy', { exact: true })).toBeVisible();
+  await expect(opening.getByText('2 lost', { exact: true })).toBeVisible();
+  await opening.click();
   await expect(repertoire.getByText('Opponent accuracy', { exact: true }).filter({ visible: true })).toBeVisible();
   await page.getByRole('button', { name: 'Weaknesses', exact: true }).click();
   await expect(page.getByText('Allowed forced mates', { exact: false })).toBeVisible();
@@ -100,6 +103,9 @@ test('selects a sample, pauses, reloads, saves, filters, and retries an engine-b
   let reviewEngineRequests = 0;
   await page.unroute('**/stockfish/stockfish.js');
   await page.route('**/stockfish/stockfish.js', (route) => { reviewEngineRequests++; return route.abort(); });
+  const examples = page.locator('summary').filter({ hasText: 'Review positions (2)', visible: true });
+  await expect(page.getByRole('button', { name: 'Review move', exact: true }).first()).toBeHidden();
+  await examples.click();
   await page.getByRole('button', { name: 'Review move', exact: true }).first().click();
   await expect(page).toHaveURL(/ply=5/);
   await expect(page.getByText(/allows checkmate in 1/i).first()).toBeVisible();
@@ -107,7 +113,7 @@ test('selects a sample, pauses, reloads, saves, filters, and retries an engine-b
   await expect(page.getByText(/allows checkmate in 1/i).first()).toBeVisible();
   await page.getByRole('button', { name: 'Back to games' }).click();
   await expect(page.getByRole('heading', { name: 'Weaknesses & training' })).toBeVisible();
-  await page.getByRole('button', { name: 'Retry position', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Practice position', exact: true }).click();
   await expect(page).toHaveURL(/retry=1/);
   await expect(page.getByText('Find a better move', { exact: true }).first()).toBeVisible();
   expect(reviewEngineRequests).toBe(0);

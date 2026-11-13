@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Activity, BookOpen, ChartNoAxesCombined, Crosshair, Gauge, Layers3, ListChecks, TrendingUp } from 'lucide-react';
+import { PageHero } from '@/components/PageHero';
 import { ClassificationIcon } from '@/components/ClassificationIcon';
 import type { Phase } from '@/lib/analysis/phases';
 import { CLASSIFICATION_LABEL, CLASSIFICATIONS } from '@/lib/analysis/types';
@@ -53,10 +54,7 @@ export function Dashboard({ rows, page, profile, onProfileChange, onBulk, onRevi
   const info = pageInfo[page];
 
   return <div className="grid gap-5">
-    <div className="analytics-hero">
-      <h1>{info.title}</h1>
-      <p>{info.description}</p>
-    </div>
+    <PageHero variant={page} title={info.title} description={info.description} />
     {!profile ? <Section title="Choose your player" icon={<ListChecks size={20} />}>
       <Empty><p>Set your Chess.com or Lichess username in Bulk Analysis to see your games here.</p>
         <button className="btn btn-primary mt-4" onClick={onBulk}><ListChecks size={16} /> Set up player</button>
@@ -80,9 +78,9 @@ export function Dashboard({ rows, page, profile, onProfileChange, onBulk, onRevi
         : page === 'weaknesses' ? <Weaknesses rows={matching} onReview={onReview} />
         : <>
           <Metrics totals={totals} />
-          <BrilliantMoves key={playerKey(profile.source, profile.username) + chosenVersion} rows={matching} onReview={onReview} />
           <History key={playerKey(profile.source, profile.username) + chosenVersion} rows={matching} onReview={onReview} />
           <Breakdown rows={matching} />
+          <BrilliantMoves key={playerKey(profile.source, profile.username) + chosenVersion} rows={matching} onReview={onReview} />
           <PhaseTable rows={matching} />
           <Conditions rows={matching} />
           <GameTable rows={matching} onReview={onReview} />
@@ -92,22 +90,39 @@ export function Dashboard({ rows, page, profile, onProfileChange, onBulk, onRevi
 }
 
 function Metrics({ totals: t }: { totals: ReturnType<typeof aggregate> }) {
+  const highlights = [
+    { label: 'Game accuracy', value: pct(t.accuracy), detail: `${t.accuracyN} scored games`, icon: Gauge, tone: 'accuracy' },
+    { label: 'Win rate', value: pct(t.winPct), detail: `${t.wins} wins · ${t.draws} draws · ${t.losses} losses`, icon: TrendingUp, tone: 'results' },
+    { label: 'Analyzed games', value: t.n.toLocaleString(), detail: `${t.totals.all.toLocaleString()} player moves`, icon: Layers3, tone: 'games' },
+  ];
   const metrics = [
-    ['Analyzed games', t.n.toLocaleString(), `${t.totals.all.toLocaleString()} player moves`, Layers3],
-    ['Mean game accuracy', pct(t.accuracy), `${t.accuracyN} scored games · estimate`, Gauge],
-    ['Average CP loss', num(t.acpl), `${t.totals.graded.toLocaleString()} graded moves`, Activity],
-    ['Blunders / game', num(t.blunders, 2), `${t.totals.counts.blunder} in sample`, Crosshair],
-    ['Mistakes / game', num(t.mistakes, 2), `${t.totals.counts.mistake} in sample`, ListChecks],
-    ['Best moves', pct(t.bestPct), 'Best / graded moves', Gauge],
-    ['Win rate', pct(t.winPct), `${t.wins} wins / ${t.knownResults} known results`, TrendingUp],
-    ['Mean move accuracy', pct(t.moveAccuracy), 'Weighted by graded moves', Activity],
-  ] as const;
-  return <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-    {metrics.map(([label, value, detail, Icon]) => <div className="card min-w-0 p-3 sm:p-4" key={label}>
-      <div className="flex items-center justify-between gap-1 text-xs font-semibold text-muted sm:text-sm">{label}<Icon className="hidden shrink-0 text-accent sm:block" size={16} /></div>
-      <p className="mt-1 text-2xl font-extrabold tabular-nums">{value}</p><p className="mt-1 text-xs text-muted">{detail}</p>
-    </div>)}
-  </div>;
+    ['Move accuracy', pct(t.moveAccuracy)],
+    ['Best moves', pct(t.bestPct)],
+    ['Avg. centipawn loss', num(t.acpl)],
+    ['Mistakes per game', num(t.mistakes, 2)],
+    ['Blunders per game', num(t.blunders, 2)],
+  ];
+  return (
+    <section className="grid gap-3" aria-label="Performance overview">
+      <dl className="scorecard">
+        {highlights.map(({ label, value, detail, icon: Icon, tone }) => (
+          <div className="scorecard-highlight" data-tone={tone} key={label}>
+            <dt><Icon size={17} aria-hidden="true" />{label}</dt>
+            <dd className="scorecard-value">{value}</dd>
+            <dd className="scorecard-detail">{detail}</dd>
+          </div>
+        ))}
+      </dl>
+      <dl className="scorecard-stats">
+        {metrics.map(([label, value]) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
 }
 
 function History({ rows, onReview }: { rows: SampleGame[]; onReview: OpenReview }) {
@@ -117,7 +132,7 @@ function History({ rows, onReview }: { rows: SampleGame[]; onReview: OpenReview 
   const [rating, setRating] = useState(false);
   const points = useMemo(() => trend(rows, interval, window, phase || undefined), [rows, interval, window, phase]);
   return <Section title="Accuracy over time" icon={<ChartNoAxesCombined size={20} />} detail="Game accuracy approximates Chess.com’s score. Phase trends use graded move accuracy. Accuracy alone does not measure playing strength.">
-    <div className="mb-4 flex flex-wrap items-end gap-3">
+    <div className="analytics-controls mb-4 flex flex-wrap items-end gap-3">
       <Field label="Group by"><select className="input" value={interval} onChange={(e) => setInterval(e.target.value as Interval)}>
         <option value="game">Game</option><option value="day">Day</option><option value="week">Week (Monday)</option><option value="month">Month</option></select></Field>
       <Field label={`Rolling window (${interval === 'game' ? 'games' : 'observed periods'})`}><input className="input w-32" type="number" min={1} max={100} value={window} onChange={(e) => setWindow(Math.max(1, Math.min(100, e.target.valueAsNumber || 1)))} /></Field>
@@ -145,24 +160,26 @@ function Breakdown({ rows }: { rows: SampleGame[] }) {
   const groups = group ? [...groupSample(rows, groupers[group])] : [];
   const { totals } = aggregate(rows, phase || undefined);
   return <Section title="Move classifications" icon={<ListChecks size={20} />} detail="Percentages use all classified player moves in this view, including Book and Forced.">
-    <div className="mb-4 flex flex-wrap gap-3">
+    <div className="analytics-controls mb-4 flex flex-wrap gap-3">
       <Field label="Classification phase"><select className="input" value={phase} onChange={(e) => setPhase(e.target.value as Phase | '')}><option value="">All phases</option>
         {PHASES.map((p) => <option key={p} value={p}>{titleCase(p)}</option>)}</select></Field>
       <Field label="Compare classifications by"><select className="input" value={group} onChange={(e) => setGroup(e.target.value as Group | '')}>
         <option value="">No groups</option>{Object.entries(groupLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
     </div>
     {!totals.all ? <Empty>No classified moves in this phase.</Empty> : <>
-      <div className="grid gap-1.5 sm:grid-cols-2 sm:gap-x-8">
-        {CLASSIFICATIONS.map((c) => {
-          const share = 100 * totals.counts[c] / totals.all;
-          return <div className="grid grid-cols-[minmax(6.75rem,auto)_1fr_auto] items-center gap-2 text-sm" key={c}>
-            <span className="flex items-center gap-2"><span aria-hidden="true"><ClassificationIcon classification={c} /></span>{CLASSIFICATION_LABEL[c]}</span>
-            <div className="h-2 overflow-hidden rounded-full bg-surface-3">
-              <div className="h-full rounded-full" style={{ width: `${share}%`, background: `var(--color-${c})` }} />
-            </div><span className="text-right tabular-nums text-muted">{totals.counts[c].toLocaleString()} · {pct(share)}</span>
-          </div>;
-        })}
+      <div className="classification-distribution" aria-hidden="true">
+        {CLASSIFICATIONS.filter((c) => totals.counts[c] > 0).map((c) => (
+          <span key={c} style={{ flexGrow: totals.counts[c], backgroundColor: `var(--color-${c})` }} />
+        ))}
       </div>
+      <dl className="classification-stats">
+        {CLASSIFICATIONS.map((c) => (
+          <div key={c}>
+            <dt><span aria-hidden="true"><ClassificationIcon classification={c} /></span>{CLASSIFICATION_LABEL[c]}</dt>
+            <dd>{totals.counts[c].toLocaleString()} <span>{pct(100 * totals.counts[c] / totals.all)}</span></dd>
+          </div>
+        ))}
+      </dl>
       {!!groups.length && <div className="mt-4"><Table headers={['Group', 'Moves', ...CLASSIFICATIONS.map((c) => CLASSIFICATION_LABEL[c])]}>
         {groups.map(([label, sample]) => {
           const { totals } = aggregate(sample, phase || undefined);

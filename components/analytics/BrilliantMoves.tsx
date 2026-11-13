@@ -49,7 +49,7 @@ export function BrilliantMoves({ rows, onReview }: { rows: SampleGame[]; onRevie
   const loading = !resolved && candidates.some((game) => !game.side.brilliantMoves);
   const current = Math.min(page, Math.max(0, Math.ceil(moves.length / PAGE_SIZE) - 1));
 
-  return <Section id="brilliant-moves" title="Brilliant moves" icon={<ClassificationIcon classification="brilliant" size={25} />}
+  return <Section id="brilliant-moves" className="brilliant-section" title="Brilliant moves" icon={<ClassificationIcon classification="brilliant" size={25} />}
     detail={total ? `${total.toLocaleString()} ${total === 1 ? 'move' : 'moves'} in ${candidates.length.toLocaleString()} ${candidates.length === 1 ? 'game' : 'games'} · Newest games first` : undefined}>
     {total === 0 && <Empty>No brilliant moves in this sample.</Empty>}
     {loading && <p role="status" className="mb-3 text-sm text-muted">Reading older saved reviews…</p>}
@@ -61,14 +61,14 @@ export function BrilliantMoves({ rows, onReview }: { rows: SampleGame[]; onRevie
         const { white, black, timeClass } = game.row.game;
         return <li key={`${game.row.id}:${move.ply}`}>
           <button type="button" className="brilliant-row" onClick={() => onReview(game.row, game.color, move.ply)}>
-            <span className="brilliant-notation">{move.notation}</span>
+            <span className="brilliant-notation"><span aria-hidden="true"><ClassificationIcon classification="brilliant" size={17} /></span>{move.notation}</span>
             <span className="min-w-0 flex-1">
               <span className="block break-words font-semibold text-fg">{white.name} <span className="font-normal text-muted">vs</span> {black.name}</span>
               <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted">
                 <Clock3 size={13} aria-hidden /> {dateLabel(game.date)} · {titleCase(timeClass)} · {game.color === 'w' ? 'White' : 'Black'}
               </span>
             </span>
-            <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-accent-strong">
+            <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-[var(--color-brilliant)]">
               <span className="sr-only sm:not-sr-only">Review move</span><ArrowRight size={17} aria-hidden />
             </span>
           </button>

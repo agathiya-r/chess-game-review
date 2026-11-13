@@ -1,5 +1,6 @@
 'use client';
 
+import { PageHero } from '@/components/PageHero';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, Database, Download, ListChecks } from 'lucide-react';
 import { collectHistory, dateLabel, gameDate } from '@/lib/analytics/history';
@@ -135,10 +136,7 @@ export function BulkPanel({ analytics, initialAccount, profile, onProfileChange,
   };
 
   return <div className="grid gap-5">
-    <div className="analytics-hero">
-      <h1>Bulk analysis</h1>
-      <p>Find games from your public history and queue them for Stockfish.</p>
-    </div>
+    <PageHero variant="bulk" title="Bulk analysis" description="Find games from your public history and queue them for Stockfish." />
     <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); void search(); }}>
       <SampleDisclosure filters={filters} preset={profile ? titleCase(depth) : undefined} initiallyOpen
         detail={profile ? 'Choose which games to fetch. These filters also apply to your dashboard.'

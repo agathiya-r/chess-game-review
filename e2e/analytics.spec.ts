@@ -294,6 +294,8 @@ test('opens a brilliant move from a new or older saved review', async ({ page })
   await page.goto('/?view=dashboard');
   const section = page.getByRole('region', { name: 'Brilliant moves', exact: true });
   await expect(section.getByText('2 moves in 2 games', { exact: false })).toBeVisible();
+  const classifications = page.getByRole('region', { name: 'Move classifications', exact: true });
+  expect(await classifications.evaluate((element) => element.nextElementSibling?.id)).toBe('brilliant-moves');
   await expect(section.getByRole('button', { name: /40… Rxg3\+.*NewOpponent/ })).toBeVisible();
   await section.getByRole('button', { name: /40… Rxg3\+.*OldOpponent/ }).click();
   await expect(page).toHaveURL(/side=b&ply=0/);

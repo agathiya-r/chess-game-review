@@ -391,7 +391,8 @@ a {
   .analytics-wrap .btn:disabled { @apply opacity-50; }
   .analytics-table th, .analytics-table td { @apply border-b border-line px-3 py-2.5; }
   .analytics-table thead th { @apply bg-surface-2 text-xs font-semibold text-muted; }
-  .analytics-table tbody tr:hover { @apply bg-surface-2/45; }
+  .analytics-table tbody tr:nth-child(even) { @apply bg-bg/35; }
+  .analytics-table tbody tr:hover { @apply bg-surface-2; }
   .analytics-table tbody tr:last-child > * { @apply border-b-0; }
 }
 
@@ -428,15 +429,6 @@ a {
   .active-player-empty:hover { @apply bg-surface-3; }
   .active-player-icon { @apply grid size-9 shrink-0 place-items-center rounded-md bg-surface-3 text-accent-strong; }
 
-  .analytics-hero {
-    @apply rounded-lg border-0 bg-surface px-5 py-5 sm:px-7 sm:py-6;
-    background-image: linear-gradient(106deg, transparent 58%, #38432d 100%);
-    box-shadow: inset 4px 0 var(--color-accent);
-  }
-  .analytics-hero h1 { @apply mt-0 text-2xl sm:text-4xl; }
-  .analytics-hero p { @apply mt-1.5; }
-  .analytics-wrap .card { @apply rounded-lg; }
-
   @media (min-width: 1024px) {
     .app-shell-with-rail {
       display: grid;
@@ -459,11 +451,13 @@ a {
 @layer components {
   .analytics-section {
     @apply scroll-mt-4 p-4 sm:p-6;
+    box-shadow: inset 0 1px #ffffff09, 0 4px 12px #00000012;
   }
 
   .analytics-section-icon,
   .sample-icon {
-    @apply flex size-9 shrink-0 items-center justify-center rounded-md bg-surface-3 text-accent-strong;
+    @apply flex size-9 shrink-0 items-center justify-center rounded-lg text-accent-strong;
+    background: #81b64c19;
   }
 
   .sample-disclosure {
@@ -483,15 +477,133 @@ a {
   .sample-fields { @apply border-t border-line p-4 sm:p-6; }
 
   .brilliant-list {
-    @apply divide-y divide-line rounded-lg border border-line bg-bg;
+    @apply divide-y divide-[#3a5048] rounded-lg border;
+    border-color: #5ad8bc24;
+    background: #151f1ce6;
   }
 
   .brilliant-row {
-    @apply flex min-h-16 w-full items-center gap-2.5 rounded-md p-2.5 text-left hover:bg-surface-2 sm:gap-4 sm:px-4;
+    @apply flex min-h-16 w-full items-center gap-2.5 rounded-md p-2.5 text-left sm:gap-4 sm:px-4;
+    transition: background 120ms;
   }
 
   .brilliant-notation {
-    @apply min-w-20 shrink-0 rounded-md bg-surface-3 px-2 py-1.5 text-center font-mono text-sm font-bold;
+    @apply flex min-w-20 shrink-0 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 font-mono text-sm font-bold;
+    background: #26c2a31c;
     color: var(--color-brilliant);
   }
+}
+
+@layer components {
+  .chess-hero {
+    --hero-tint: #536b32;
+    --hero-light-square: #a2b178;
+    --hero-dark-square: #53643d;
+    @apply relative isolate flex min-h-38 items-center overflow-hidden rounded-xl border border-line px-5 py-6 sm:min-h-48 sm:px-8;
+    background: radial-gradient(ellipse at 94% 15%, var(--hero-tint), #282922 64%, #242420 100%);
+    box-shadow: inset 0 1px #ffffff12, 0 8px 20px #0003;
+  }
+
+  .chess-hero[data-variant='openings'] {
+    --hero-tint: #635336;
+    --hero-light-square: #ac996d;
+    --hero-dark-square: #6a5437;
+  }
+
+  .chess-hero[data-variant='weaknesses'] {
+    --hero-tint: #395d54;
+    --hero-light-square: #90a99a;
+    --hero-dark-square: #43695e;
+  }
+
+  .chess-hero::after {
+    content: '';
+    @apply pointer-events-none absolute inset-0;
+    background: linear-gradient(90deg, #242420 8%, #242420f0 36%, #24242048 73%, #24242000 100%);
+  }
+
+  .chess-hero-copy { @apply relative z-10 min-w-0 max-w-[90%] sm:max-w-[68%]; }
+  .chess-hero h1 { @apply text-3xl leading-tight font-extrabold tracking-tight text-[#f7f5ee] sm:text-[2.85rem]; }
+  .chess-hero p { @apply mt-2 max-w-[38ch] text-sm leading-relaxed text-[#d6d3c8] sm:text-base; }
+
+  .chess-hero-art {
+    @apply pointer-events-none absolute inset-y-0 right-0 w-[65%];
+    perspective: 630px;
+  }
+
+  .chess-hero-board {
+    position: absolute;
+    top: 48%;
+    right: -5%;
+    width: clamp(225px, 37vw, 430px);
+    aspect-ratio: 1;
+    transform: translateY(-50%) rotateX(32deg) rotateZ(-26deg);
+    background: repeating-conic-gradient(var(--hero-light-square) 0% 25%, var(--hero-dark-square) 0% 50%) 0 0 / 25% 25%;
+    box-shadow: 0 12px 0 #0b100eb0, 0 25px 42px #0007;
+    opacity: .73;
+  }
+
+  .chess-hero-piece {
+    position: absolute;
+    width: 12.5%;
+    height: 12.5%;
+    transform: translateY(-9%) scale(1.12);
+    filter: drop-shadow(0 3px 2px #000a);
+  }
+
+  .chess-hero-piece svg { width: 100%; height: 100%; }
+
+  @media (max-width: 639px) {
+    .chess-hero::after { background: linear-gradient(90deg, #242420 12%, #242420ed 56%, #24242044); }
+    .chess-hero-board { right: -65px; opacity: .5; }
+  }
+
+  .scorecard {
+    @apply grid grid-cols-2 overflow-hidden rounded-xl border border-line bg-surface sm:grid-cols-3;
+  }
+
+  .scorecard-highlight {
+    --metric-accent: #b5d58d;
+    @apply min-w-0 px-3.5 py-4 sm:px-5 sm:py-5;
+    background: radial-gradient(ellipse at 100% 0, color-mix(in srgb, var(--metric-accent) 12%, transparent), transparent 75%);
+  }
+
+  .scorecard-highlight[data-tone='accuracy'] {
+    --metric-accent: #c0e59a;
+    @apply col-span-2 border-b border-line sm:col-span-1 sm:border-b-0;
+  }
+
+  .scorecard-highlight[data-tone='results'] { --metric-accent: #e8ca8c; }
+  .scorecard-highlight[data-tone='games'] { --metric-accent: #a2c7df; }
+  .scorecard-highlight + .scorecard-highlight { @apply sm:border-l sm:border-line; }
+  .scorecard-highlight:last-child { @apply border-l border-line; }
+  .scorecard-highlight dt { @apply flex items-center gap-2 text-sm font-semibold text-fg; }
+  .scorecard-highlight dt svg { flex-shrink: 0; color: var(--metric-accent); }
+  .scorecard-value { @apply mt-1.5 text-3xl leading-none font-extrabold tracking-tight tabular-nums sm:text-[2.6rem]; color: var(--metric-accent); }
+  .scorecard-detail { @apply mt-2 text-xs text-muted; }
+
+  .scorecard-stats {
+    @apply grid grid-cols-2 gap-x-3 gap-y-3 rounded-lg border border-line bg-surface px-3.5 py-3 sm:grid-cols-5 sm:px-5;
+  }
+
+  .scorecard-stats dt { @apply text-xs leading-tight text-muted; }
+  .scorecard-stats dd { @apply mt-1 text-lg leading-none font-bold tabular-nums; }
+  .analytics-controls { @apply rounded-lg border border-line bg-bg/50 p-3; }
+
+  .classification-distribution { @apply flex h-3 overflow-hidden rounded-md bg-bg; }
+  .classification-distribution span { flex-basis: 0; }
+  .classification-stats { @apply mt-3 grid gap-x-5 sm:grid-cols-2; }
+  .classification-stats > div { @apply flex min-w-0 items-center justify-between gap-2 border-b border-line px-0.5 py-2 text-sm; }
+  .classification-stats dt { @apply flex min-w-0 items-center gap-2 font-medium; }
+  .classification-stats dd { @apply flex shrink-0 items-baseline gap-2 font-semibold tabular-nums; }
+  .classification-stats dd span { @apply min-w-12 text-right text-xs font-normal text-muted; }
+
+  .brilliant-section {
+    border-color: #57988962;
+    background: radial-gradient(ellipse at 100% 0, #335b4e, transparent 64%), #252f2a;
+  }
+
+  .brilliant-section .analytics-section-icon { background: #26c2a31e; }
+  .brilliant-row:hover,
+  .brilliant-row:focus-visible { background: #29433a; }
 }

@@ -7,6 +7,7 @@ import { GameLoader, type LoaderSource, type RecentSearch } from '@/components/h
 import dynamic from 'next/dynamic';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import type { AnalyticsPage, OpenReview } from '@/components/analytics/shared';
+import { PageHero } from '@/components/PageHero';
 import { ActivePlayer } from '@/components/analytics/ActivePlayer';
 import { loadProfile, profileColor, PROFILE_KEY, type AnalysisProfile, type PlayerAccount } from '@/lib/analytics/profile';
 import type { StoredDetail, StoredSummary } from '@/lib/analytics/model';
@@ -378,19 +379,10 @@ export function App() {
         </div>}
         {!game && page === 'games' && (
           <div className={cn('mx-auto w-full max-w-3xl px-4 pb-16', searched ? 'pt-4 sm:pt-8' : 'pt-8 sm:pt-16')}>
-            {/* The pitch is for first-time visitors; once games are showing, it gets out of the way. */}
-            {!searched && (
-              // Short on phones so the search box sits high enough to stay above the keyboard.
-              <div className="mb-5 text-center sm:mb-8">
-                <h1 className="text-[24px] leading-tight font-extrabold tracking-tight sm:text-[44px]">
-                  Find out what really happened in your game.
-                </h1>
-                <p className="mx-auto mt-3 hidden max-w-xl text-[16px] text-muted sm:block">
-                  Free move-by-move review of your Chess.com and Lichess games: brilliant moves, blunders, accuracy
-                  and the reasons behind them.
-                </p>
-              </div>
-            )}
+            {!searched && <div className="mb-5 sm:mb-7">
+              <PageHero variant="review" title="Review a game"
+                description="Find a Chess.com or Lichess game and see what happened move by move." />
+            </div>}
 
             <GameLoader
               source={source}

@@ -10,6 +10,98 @@ export interface GamePage {
 }
 
 const PAGE_SIZE = 40;
+const LICHESS_CLASSES = {
+  bullet: 'ultraBullet,bullet', blitz: 'blitz', rapid: 'rapid', classical: 'classical', daily: 'correspondence',
+};
+export interface PageOptions {
+  signal?: AbortSignal;
+  since?: number;
+  until?: number;
+  timeClass?: TimeClass;
+  rated?: boolean;
+  onBackoff?: (seconds: number) => void;
+  /** Bulk readers may request one monthly archive or a larger Lichess page. */
+  pageSize?: number;
+}
+
+// One outstanding archive request per provider, including reading the response.
+const queues = new Map<string, Promise<unknown>>();
+const cooldown = new Map<string, number>();
+
+function delay(ms: number, signal?: AbortSignal) {
+  signal?.throwIfAborted();
+  return new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', abort);
+      resolve();
+    }, ms);
+    function abort() { clearTimeout(timer); reject(signal?.reason); }
+    signal?.addEventListener('abort', abort, { once: true });
+  });
+}
+
+async function sourceRequest<T>(url: string, read: (response: Response) => Promise<T>, options: PageOptions = {}, init?: RequestInit) {
+  const host = new URL(url).hostname;
+  const { signal } = options;
+  const run = (queues.get(host) ?? Promise.resolve()).catch(() => {}).then(async () => {
+    for (let attempt = 0; ; attempt++) {
+      signal?.throwIfAborted();
+      const wait = (cooldown.get(host) ?? 0) - Date.now();
+      if (wait > 0) {
+        options.onBackoff?.(Math.ceil(wait / 1000));
+        await delay(wait, signal);
+        options.onBackoff?.(0);
+      }
+      let res: Response;
+      try {
+        res = await fetch(url, { ...init, signal });
+      } catch (err) {
+        if (signal?.aborted) throw err;
+        if (attempt >= 2) throw new SourceError('Network error. Check your connection and try again.');
+        await delay(500 * 2 ** attempt, signal);
+        continue;
+      }
+      if (res.ok) return read(res);
+      void res.body?.cancel().catch(() => {});
+      if (res.status === 404) throw new SourceError('Player not found.');
+      if (res.status === 429) {
+        const retryAfter = res.headers.get('Retry-After');
+        const seconds = retryAfter && /^\d+$/.test(retryAfter) ? Number(retryAfter) * 1000 : 0;
+        const date = retryAfter ? Date.parse(retryAfter) - Date.now() : 0;
+        cooldown.set(host, Date.now() + Math.max(60_000, seconds, Number.isFinite(date) ? date : 0));
+        if (attempt < 2) continue;
+        throw new SourceError('Rate limited by the server. Wait a minute before trying again.');
+      }
+      if (res.status >= 500 && attempt < 2) {
+        await delay(500 * 2 ** attempt, signal);
+        continue;
+      }
+      throw new SourceError(`Request failed (${res.status}).`);
+    }
+  });
+  queues.set(host, run);
+  try { return await run; } finally { if (queues.get(host) === run) queues.delete(host); }
+}
+
+const archiveLists = new Map<string, { urls: string[]; expires: number }>();
+async function chessComArchives(user: string, options: PageOptions) {
+  const current = archiveLists.get(user);
+  if (current && current.expires > Date.now()) return current.urls;
+  const { archives = [] } = await sourceRequest(
+    `https://api.chess.com/pub/player/${encodeURIComponent(user)}/games/archives`,
+    (r) => r.json() as Promise<{ archives?: string[] }>, options,
+  );
+  const urls = archives.filter((url) => /^https:\/\/api\.chess\.com\/pub\/player\/[^/]+\/games\/\d{4}\/\d{2}$/.test(url)).sort().reverse();
+  archiveLists.set(user, { urls, expires: Date.now() + 5 * 60_000 });
+  if (archiveLists.size > 32) archiveLists.delete(archiveLists.keys().next().value!);
+  return urls;
+}
+
+function monthInRange(url: string, { since, until }: PageOptions) {
+  const [year, month] = url.split('/').slice(-2).map(Number);
+  return (since === undefined || Date.UTC(year, month, 1) > since)
+    && (until === undefined || Date.UTC(year, month - 1, 1) <= until);
+}
 
 /* ── Chess.com ─────────────────────────────────────────────────────────── */
 
@@ -33,7 +125,7 @@ interface ChessComGame {
   eco?: string;
 }
 
-const DRAW_RESULTS = new Set(['agreed', 'repetition', 'stalemate', 'insufficient', '50move', 'timevsinsufficient']);
+const DRAW_RESULTS = new Set(['agreed', 'repetition', 'stalemate', 'insufficient', '50move', 'timevsinsufficient', 'draw']);
 
 function chessComResult(g: ChessComGame): string {
   if (g.white.result === 'win') return '1-0';
@@ -77,45 +169,27 @@ function normaliseChessCom(g: ChessComGame, username: string): GameRecord {
   };
 }
 
-async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
-  let res: Response;
-  try {
-    res = await fetch(url, init);
-  } catch {
-    throw new SourceError('Network error. Check your connection and try again.');
-  }
-  if (res.status === 404) throw new SourceError('Player not found.');
-  if (res.status === 429) throw new SourceError('Rate limited by the server. Wait a minute and try again.');
-  if (!res.ok) throw new SourceError(`Request failed (${res.status}).`);
-  return res.json() as Promise<T>;
-}
-
 /**
- * Chess.com stores games in monthly archives. The cursor is the number of
- * archives (newest first) already consumed; pages are filled until at least
- * PAGE_SIZE games or archives run out.
+ * Monthly archives are ordered newest first. The cursor uses the last archive
+ * URL so adding a new month cannot shift pages mid-search.
  */
-export async function fetchChessComGames(username: string, cursor: string | null): Promise<GamePage> {
+export async function fetchChessComGames(username: string, cursor: string | null, options: PageOptions = {}): Promise<GamePage> {
   const user = username.trim().toLowerCase();
-  const { archives = [] } = await getJson<{ archives?: string[] }>(
-    `https://api.chess.com/pub/player/${encodeURIComponent(user)}/games/archives`,
-  );
-  const months = [...archives].reverse();
-  let consumed = cursor ? Number(cursor) : 0;
+  const months = (await chessComArchives(user, options)).filter((url) => monthInRange(url, options));
+  let consumed = cursor ? months.findIndex((url) => url < cursor) : 0;
+  if (consumed < 0) return { games: [], cursor: null };
   const games: GameRecord[] = [];
-
-  while (consumed < months.length && games.length < PAGE_SIZE) {
-    const { games: raw = [] } = await getJson<{ games?: ChessComGame[] }>(months[consumed]);
+  // Bulk wants individual archive progress, even when filters leave empty months.
+  const pageSize = options.pageSize ? 1 : PAGE_SIZE;
+  while (consumed < months.length && games.length < pageSize) {
+    const { games: raw = [] } = await sourceRequest(months[consumed], (r) => r.json() as Promise<{ games?: ChessComGame[] }>, options);
     consumed++;
-    games.push(
-      ...raw
-        .filter((g) => g.rules === 'chess' && g.pgn)
-        .sort((a, b) => b.end_time - a.end_time)
-        .map((g) => normaliseChessCom(g, user)),
-    );
+    games.push(...raw.filter((g) => g.rules === 'chess' && g.pgn)
+      .sort((a, b) => b.end_time - a.end_time)
+      .map((g) => normaliseChessCom(g, user)));
+    if (options.pageSize) break;
   }
-
-  return { games, cursor: consumed < months.length ? String(consumed) : null };
+  return { games, cursor: consumed < months.length ? months[consumed - 1] : null };
 }
 
 /* ── Lichess ───────────────────────────────────────────────────────────── */
@@ -154,48 +228,39 @@ function normaliseLichess(g: LichessGame, username: string): GameRecord {
     pgn: g.pgn ?? '',
     white: { name: white, rating: g.players.white.rating },
     black: { name: black, rating: g.players.black.rating },
-    result: g.winner === 'white' ? '1-0' : g.winner === 'black' ? '0-1' : g.status === 'started' ? '*' : '1/2-1/2',
+    result: g.winner === 'white' ? '1-0' : g.winner === 'black' ? '0-1' : ['draw', 'stalemate', 'timeout', 'outoftime'].includes(g.status) ? '1/2-1/2' : '*',
     termination: g.status,
     endTime: g.lastMoveAt,
+    startedAt: g.createdAt,
     timeControl: g.clock ? `${g.clock.initial}+${g.clock.increment}` : undefined,
     timeClass: (['bullet', 'blitz', 'rapid', 'classical', 'daily'].includes(speed) ? speed : 'unknown') as TimeClass,
     rated: g.rated,
     opening: g.opening?.name,
+    eco: g.opening?.eco,
     perspective: black.toLowerCase() === username.toLowerCase() ? 'b' : 'w',
   };
 }
 
 /** Lichess streams NDJSON newest first; the cursor is the `until` timestamp. */
-export async function fetchLichessGames(username: string, cursor: string | null): Promise<GamePage> {
+export async function fetchLichessGames(username: string, cursor: string | null, options: PageOptions = {}): Promise<GamePage> {
   const user = username.trim();
+  const size = options.pageSize ?? PAGE_SIZE;
+  const perf = options.timeClass && options.timeClass !== 'unknown' ? LICHESS_CLASSES[options.timeClass] : undefined;
   const params = new URLSearchParams({
-    max: String(PAGE_SIZE),
-    pgnInJson: 'true',
-    opening: 'true',
-    clocks: 'true',
-    perfType: 'ultraBullet,bullet,blitz,rapid,classical,correspondence',
+    max: String(size), pgnInJson: 'true', opening: 'true', clocks: 'true',
+    perfType: perf ?? Object.values(LICHESS_CLASSES).join(','),
+    evals: 'false', finished: 'true',
   });
-  if (cursor) params.set('until', cursor);
+  if (cursor || options.until !== undefined) params.set('until', cursor ?? String(options.until! + 1));
+  if (options.since !== undefined) params.set('since', String(options.since));
+  if (options.rated !== undefined) params.set('rated', String(options.rated));
 
-  let res: Response;
-  try {
-    res = await fetch(`https://lichess.org/api/games/user/${encodeURIComponent(user)}?${params}`, {
-      headers: { Accept: 'application/x-ndjson' },
-    });
-  } catch {
-    throw new SourceError('Network error. Check your connection and try again.');
-  }
-  if (res.status === 404) throw new SourceError('Player not found.');
-  if (res.status === 429) throw new SourceError('Rate limited by Lichess. Wait a minute and try again.');
-  if (!res.ok) throw new SourceError(`Request failed (${res.status}).`);
-
-  const raw = (await res.text())
-    .split('\n')
-    .filter(Boolean)
-    .map((l) => JSON.parse(l) as LichessGame);
+  const raw = await sourceRequest(`https://lichess.org/api/games/user/${encodeURIComponent(user)}?${params}`,
+    async (response) => (await response.text()).split('\n').filter(Boolean).map((l) => JSON.parse(l) as LichessGame),
+    options, { headers: { Accept: 'application/x-ndjson' } });
   const games = raw.filter((g) => g.variant === 'standard' && g.pgn).map((g) => normaliseLichess(g, user));
   const oldest = raw.at(-1)?.createdAt;
-  return { games, cursor: raw.length === PAGE_SIZE && oldest ? String(oldest - 1) : null };
+  return { games, cursor: raw.length === size && oldest ? String(oldest) : null };
 }
 
 /** Fetch a single Lichess game from its URL or 8-char id. */
@@ -207,7 +272,7 @@ export async function fetchLichessGameByUrl(input: string): Promise<string | nul
   return res.text();
 }
 
-export function fetchGames(source: 'chesscom' | 'lichess', username: string, cursor: string | null) {
-  return source === 'chesscom' ? fetchChessComGames(username, cursor) : fetchLichessGames(username, cursor);
+export function fetchGames(source: 'chesscom' | 'lichess', username: string, cursor: string | null, options?: PageOptions) {
+  return source === 'chesscom' ? fetchChessComGames(username, cursor, options) : fetchLichessGames(username, cursor, options);
 }
 

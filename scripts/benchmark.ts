@@ -21,7 +21,7 @@ import type { PositionAnalysis } from '@/lib/engine/uci';
 import { parseGame } from '@/lib/games/pgn';
 import { chessComBookPlies } from '@/lib/games/openingUrl';
 import { DEPTH_PRESETS, type AnalysisDepth } from '@/lib/settings';
-import { nodeEngine } from '../tests/helpers/node-engine';
+import { nodeEngine } from './support/node-engine';
 
 interface ArchiveGame {
   url: string;

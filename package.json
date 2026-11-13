@@ -13,7 +13,9 @@
     "test:watch": "vitest",
     "check": "npm run lint && npm run typecheck && npm run test",
     "build:openings": "node scripts/build-openings.mjs",
-    "benchmark": "vite-node --config vitest.config.ts scripts/benchmark.ts"
+    "benchmark": "vite-node --config vitest.config.ts scripts/benchmark.ts",
+    "analyze:player": "vite-node --config vitest.config.ts scripts/analyze-player.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "chess.js": "^1.4.0",
@@ -23,17 +25,21 @@
     "react": "19.2.1",
     "react-chessboard": "^5.8.6",
     "react-dom": "19.2.1",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "uplot": "^1.6.32"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "fake-indexeddb": "^6.2.8",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vite-node": "^3.2.4",
     "vitest": "^3.2.7"
   },
   "engines": {

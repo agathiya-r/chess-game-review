@@ -47,6 +47,7 @@ import { MoveList } from './MoveList';
 import { MobileReview } from './MobileReview';
 import { PlayerStrip } from './PlayerStrip';
 import { SettingsMenu } from './SettingsMenu';
+import type { StoredDetail } from '@/lib/analytics/model';
 import { SummaryPanel } from './SummaryPanel';
 
 const GOOD = new Set<Classification>(['brilliant', 'great', 'best', 'excellent', 'good', 'book', 'forced']);
@@ -61,6 +62,9 @@ interface ReviewScreenProps {
   settings: Settings;
   onSettingsChange: (s: Settings) => void;
   onBack: () => void;
+  saved?: StoredDetail;
+  initialPly?: number;
+  initialRetry?: boolean;
 }
 
 function listJoin(items: string[]) {
@@ -161,20 +165,24 @@ function summaryMessage(
   };
 }
 
-export function ReviewScreen({ game, settings, onSettingsChange, onBack }: ReviewScreenProps) {
+export function ReviewScreen({ game, settings, onSettingsChange, onBack, saved, initialPly, initialRetry }: ReviewScreenProps) {
   const [runId, setRunId] = useState(0);
-  const { parsed, review, status, progress, error, stage } = useGameReview(game, settings.depth, runId);
+  const [savedDepth] = useState(settings.depth);
+  const stored = savedDepth === settings.depth ? saved : undefined;
+  const { parsed, review, status, progress, error, stage } = useGameReview(game, settings.depth, runId, stored);
   const plies = useMemo(() => parsed?.plies ?? [], [parsed]);
   const startFen = parsed?.startFen ?? DEFAULT_POSITION;
   const reducer = useMemo(() => navReducer(plies, startFen), [plies, startFen]);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
-  const [nav, dispatch] = useReducer(reducer, initialNav);
-  const [mode, setMode] = useState<'summary' | 'review'>('summary');
+  const target = initialPly !== undefined && initialPly >= 0 && initialPly < plies.length ? initialPly : undefined;
+  const [nav, dispatch] = useReducer(reducer, { ...initialNav,
+    current: target === undefined ? -1 : target - (initialRetry ? 1 : 0) });
+  const [mode, setMode] = useState<'summary' | 'review'>(target === undefined ? 'summary' : 'review');
   const [flipped, setFlipped] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [hoverUci, setHoverUci] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [retry, setRetry] = useState<{ index: number; note?: 'same' } | null>(null);
+  const [retry, setRetry] = useState<{ index: number; note?: 'same' } | null>(initialRetry && target !== undefined ? { index: target } : null);
   /** Set by handlers so the next position change also triggers haptics. */
   const userAction = useRef(false);
   const hapticsOn = useRef(settings.haptics);
@@ -498,6 +506,7 @@ export function ReviewScreen({ game, settings, onSettingsChange, onBack }: Revie
           details: [
             retry.note === 'same'
               ? "That's the move played in the game. Try something else."
+              : initialRetry ? `Find the strongest move for ${who === 'you' ? 'your side' : who}.`
               : `${target.san} was ${c ? `${article(c)} ${CLASSIFICATION_LABEL[c].toLowerCase()}` : 'not best'}. Find a better move${who === 'you' ? '' : ` for ${who}`}.`,
           ],
         };
@@ -666,7 +675,7 @@ export function ReviewScreen({ game, settings, onSettingsChange, onBack }: Revie
         moveReview={moveReview}
         shownPly={ply}
         evaluation={evaluation}
-        analysis={analysis}
+        analysis={hideHints ? null : analysis}
         board={board}
         topStrip={strip(topColor, true)}
         bottomStrip={strip(bottomColor, true)}
@@ -834,7 +843,7 @@ export function ReviewScreen({ game, settings, onSettingsChange, onBack }: Revie
                     <EvalGraph evals={review.evals} moves={review.moves} plies={plies} current={nav.current} onSelect={goto} height={44} />
                   </div>
                 )}
-                {settings.showEngineLines && (
+                {settings.showEngineLines && !hideHints && (
                   <div className="border-t border-line">
                     <EngineLines analysis={analysis} onHover={setHoverUci} onPlay={playUci} />
                   </div>

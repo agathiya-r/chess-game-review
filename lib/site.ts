@@ -3,4 +3,4 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://chess-game-
 export const SITE_NAME = 'Game Review';
 export const AUTHOR = 'ritstar';
 export const AUTHOR_URL = 'https://github.com/ritstar';
-export const REPO_URL = 'https://github.com/ritstar/chess-game-review';
+export const REPO_URL = 'https://github.com/agathiya-r/chess-game-review';

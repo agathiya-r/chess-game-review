@@ -77,7 +77,7 @@ export function Dashboard({ rows, page, profile, onProfileChange, onBulk, onRevi
           <button className="btn btn-ghost border border-line" onClick={() => onProfileChange({ ...profile, filters: {} })}>Reset filters</button>
         </div>
       </SampleDisclosure>
-      {!matching.length ? <Empty>No analyzed games match these filters.</Empty> : page === 'openings' ? <OpeningRepertoire rows={matching} />
+      {!matching.length ? <Empty>No analyzed games match these filters.</Empty> : page === 'openings' ? <OpeningRepertoire rows={matching} onReview={onReview} />
         : page === 'weaknesses' ? <PracticePlan rows={matching} onReview={onReview} />
         : <>
           <Metrics totals={totals} />

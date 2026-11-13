@@ -667,8 +667,7 @@ a {
   details[open] > summary .analytics-chevron { transform: rotate(180deg); }
   .analytics-disclosure-body { @apply border-t border-line p-3.5 sm:p-5; }
   .analytics-disclosure-summary::-webkit-details-marker,
-  .library-game-details > summary::-webkit-details-marker,
-  .opening-summary::-webkit-details-marker { display: none; }
+  .library-game-details > summary::-webkit-details-marker { display: none; }
 
   .library-entry { @apply px-3 py-2.5 sm:px-4; }
   .library-game { @apply grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 sm:gap-4; }
@@ -685,52 +684,80 @@ a {
   .library-game-details .analytics-stat-strip { @apply my-1.5 rounded-md bg-surface-2 p-2.5; }
 
   .analytics-action { @apply inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-xs font-semibold text-fg hover:bg-surface-3; }
-  .opening-grid { @apply grid items-start gap-3 md:grid-cols-2; }
-  .opening-entry {
-    @apply min-w-0 overflow-hidden rounded-lg border border-line;
-    background: linear-gradient(135deg, #3b3428, var(--color-bg) 48%);
-  }
-  .opening-summary {
-    @apply grid cursor-pointer gap-2.5 p-3.5 hover:bg-surface-2/60 sm:p-4;
-    list-style: none;
-  }
-  .opening-summary:focus-visible { outline-offset: -3px; }
-  .opening-entry[open] > .opening-summary { @apply bg-surface-2/60; }
-  .opening-identity { @apply flex items-start gap-2.5; }
-  .opening-identity .chess-side-icon { @apply size-10; }
-  .opening-meta { @apply mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted; }
+  .opening-toolbar { @apply mb-4 grid grid-cols-2 items-end gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_6.5rem_auto]; }
+  .opening-explorer { @apply grid min-w-0 overflow-hidden rounded-xl border border-line bg-bg md:grid-cols-[minmax(11rem,0.95fr)_minmax(0,2.3fr)]; }
+  .opening-index { @apply min-w-0 border-b border-line bg-bg/80 md:border-r md:border-b-0; }
+  .opening-index-mobile { @apply p-3 md:hidden; }
+  .opening-index-mobile select { @apply w-full; }
+  .opening-index-desktop { @apply hidden md:block; }
+  .opening-index-desktop ul { @apply max-h-104 overflow-y-auto; }
+  .opening-index-heading { @apply border-b border-line px-4 py-3 text-xs font-semibold text-muted; }
+  .opening-index-row { @apply flex w-full items-center gap-2 border-b border-line/60 px-3.5 py-3 text-left hover:bg-surface-2; }
+  .opening-index-row > svg { @apply shrink-0 text-muted; }
+  .opening-index-row:focus-visible { outline-offset: -3px; }
+  .opening-index-row[aria-pressed='true'] { background: #4a4030; box-shadow: inset 3px 0 #e8ca8c; }
+  .opening-index-row[aria-pressed='true'] > svg { color: #e8ca8c; }
+  .opening-index-pages { @apply flex flex-wrap items-center gap-1.5 px-3 pb-3 text-xs text-muted md:pt-3; }
+  .opening-index-pages > span { @apply mr-auto; }
+  .opening-focus { @apply min-w-0 p-4 lg:p-5; background: radial-gradient(ellipse at 100% 0%, #423727, transparent 65%), var(--color-surface); }
+  .opening-focus-header { @apply flex items-start gap-2.5; }
+  .opening-focus-header > .chess-side-icon { @apply size-10; }
+  .opening-focus-meta { @apply flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted; }
   .opening-eco { @apply rounded bg-surface-3 px-1.5 py-0.5 font-mono font-semibold text-[#e8ca8c]; }
-  .opening-score { @apply flex items-center justify-between gap-2 border-t border-line pt-2.5; }
-  .opening-score-label { @apply inline-flex items-center gap-1.5 text-xs font-semibold text-muted; }
-  .opening-score strong { @apply text-xl leading-tight font-bold text-accent-strong tabular-nums; }
-  .opening-outcomes { @apply grid grid-cols-3 gap-1 rounded-md bg-bg/75 py-1.5; }
-  .opening-outcomes > span { @apply inline-flex items-center justify-center gap-1 text-xs text-muted; }
-  .opening-outcomes > span svg { @apply shrink-0; }
+  .opening-focus-header h3 { @apply mt-1 text-lg leading-tight font-extrabold tracking-tight break-words sm:text-2xl; }
+  .opening-study { @apply mt-3 flex items-start gap-1.5 text-xs text-[#e8ca8c]; }
+  .opening-study svg { @apply shrink-0; }
+  .opening-focus-body { @apply mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start; }
+  .opening-visual { @apply grid min-w-0 content-start gap-2; }
+  .opening-review { @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-bold; background: #e8ca8c; color: #2c2315; }
+  .opening-review:hover:not(:disabled) { background: #f1d8a4; }
+  .opening-numbers { @apply min-w-0; }
+  .opening-key-metric { --comparison-accent: #e8ca8c; @apply grid gap-1.5; }
+  .opening-key-metric > span, .opening-results h4 { @apply inline-flex items-center gap-1.5 text-xs font-semibold text-muted; }
+  .opening-key-metric strong { @apply text-3xl leading-none font-extrabold tracking-tight text-[#f4dfb1] tabular-nums; }
+  .opening-key-metric p { @apply text-xs text-muted; }
+  .opening-results { @apply mt-3 border-t border-line pt-3; }
+  .opening-result-chart { @apply mt-1.5 flex h-2 overflow-hidden rounded-full bg-surface-3; }
+  .opening-result-chart span { flex-basis: 0; }
+  .opening-result-chart [data-result='win'] { background: #95c95d; }
+  .opening-result-chart [data-result='draw'] { background: #aaa398; }
+  .opening-result-chart [data-result='loss'] { background: #e87b6f; }
+  .opening-outcomes { @apply mt-2 grid grid-cols-3 gap-1 text-xs text-muted; }
+  .opening-outcomes > div { @apply grid gap-0.5; }
   .opening-outcomes strong { @apply text-fg tabular-nums; }
-  .opening-outcomes [data-result='win'] svg { color: #b5d58d; }
-  .opening-outcomes [data-result='loss'] svg { color: #ffada5; }
-  .opening-details { @apply border-t border-line bg-bg p-3.5 sm:p-4; }
 
-  .practice-list { @apply grid gap-3; }
-  .practice-topic {
-    @apply min-w-0 rounded-lg border border-line;
-    background: radial-gradient(ellipse at 0 0, #384232, transparent 68%), var(--color-bg);
-  }
-  .practice-topic-header { @apply flex flex-wrap items-center gap-2.5 px-3.5 pt-3.5 sm:gap-3 sm:px-4 sm:pt-4; }
-  .practice-topic-header > div { @apply flex-1; }
-  .practice-topic-icon { @apply grid size-10 shrink-0 place-items-center rounded-lg text-accent-strong; background: #81b64c22; }
-  .practice-start { @apply inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-bold sm:ml-auto sm:w-auto; background: #95c95d; color: #18210e; }
-  .practice-start:hover { background: #a9d97b; }
-  .practice-tip { @apply flex items-start gap-2 px-3.5 pt-3 pb-3.5 text-sm leading-relaxed text-muted sm:px-4; }
-  .practice-tip svg { @apply mt-0.5 shrink-0 text-[#e8ca8c]; }
-  .practice-examples { @apply border-t border-line; }
-  .practice-examples > summary { @apply flex cursor-pointer items-center gap-2 rounded-b-lg px-3.5 py-2.5 text-sm font-semibold hover:bg-surface-2 sm:px-4; list-style: none; }
-  .practice-examples > summary::-webkit-details-marker { display: none; }
-  .practice-examples > summary > svg:first-child { @apply text-muted; }
-  .practice-examples-body { @apply px-3.5 pb-3.5 sm:px-4 sm:pb-4; }
-  .practice-position { @apply grid min-w-0 gap-2 px-3 py-2.5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-4; }
-  .practice-move { @apply font-mono text-sm text-[#e8ca8c]; }
-  .practice-retry { border-color: #81b64c59; background: #81b64c14; color: var(--color-accent-strong); }
+  .saved-position { @apply grid aspect-square w-full max-w-[23rem] place-items-center justify-self-center rounded-md border border-white/15 bg-bg/65 p-1; }
+  .saved-position .board-shell { --board-size: 100%; }
+  .saved-position-placeholder { @apply grid size-full place-items-center p-3 text-center text-xs text-muted; }
+
+  .practice-focus { @apply overflow-hidden rounded-xl border border-line; background: radial-gradient(ellipse at 90% 0%, #34483d, transparent 70%), var(--color-bg); }
+  .practice-main { @apply grid gap-4 p-4 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.1fr)] md:items-center lg:gap-6 lg:p-5; }
+  .practice-visual { @apply grid min-w-0 gap-2 md:col-start-1 md:row-start-1; }
+  .practice-visual .saved-position { @apply max-w-[16rem] md:max-w-[23rem]; }
+  .practice-visual .practice-position-nav { @apply max-w-[16rem] md:max-w-[23rem]; }
+  .practice-position-nav { @apply mx-auto flex w-full max-w-[23rem] items-center justify-between gap-1 text-xs font-semibold text-muted; }
+  .practice-focus-copy { @apply min-w-0 md:col-start-2 md:row-start-1; }
+  .opening-review:disabled, .practice-start:disabled, .practice-review:disabled { opacity: .55; }
+  .practice-topic-icon { @apply grid size-9 place-items-center rounded-lg text-accent-strong; background: #81b64c22; }
+  .practice-focus-copy h3 { @apply mt-2 text-xl leading-tight font-extrabold tracking-tight sm:text-3xl; }
+  .practice-count { @apply mt-1 text-xs text-muted; }
+  .practice-instruction { @apply mt-3 flex items-start gap-2 text-sm leading-relaxed text-muted; }
+  .practice-instruction svg { @apply mt-0.5 shrink-0 text-[#e8ca8c]; }
+  .practice-cta { @apply mt-4 flex flex-wrap items-center gap-2; }
+  .practice-start { @apply inline-flex min-h-10 flex-1 items-center justify-between gap-2 rounded-md px-3 py-2 text-sm font-bold sm:flex-none; background: #95c95d; color: #18210e; }
+  .practice-start:hover:not(:disabled) { background: #a9d97b; }
+  .practice-review { @apply inline-flex min-h-10 items-center justify-center gap-1 rounded-md border border-line px-2 py-2 text-xs font-semibold text-fg hover:bg-surface-3 sm:px-3; }
+  .practice-game-caption { @apply mt-2 text-xs text-muted; }
+  .practice-evidence { @apply border-t border-line px-4 py-2.5 text-xs text-muted lg:px-5; }
+  .practice-evidence > summary { @apply w-fit cursor-pointer font-semibold hover:text-fg; }
+  .practice-evidence > p { @apply mt-2 leading-relaxed; }
+  .practice-evidence > dl { @apply mt-2 mb-1; }
+  .practice-topics { @apply mt-4; }
+  .practice-topics h3 { @apply mb-2 text-sm font-bold; }
+  .practice-topics ul { @apply flex flex-wrap gap-1.5; }
+  .practice-topics button { @apply inline-flex min-h-9 items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-xs font-semibold text-muted hover:bg-surface-3; }
+  .practice-topics button[aria-pressed='true'] { @apply text-accent-strong; border-color: #81b64c66; background: #81b64c22; }
+  .practice-topic-count { @apply font-normal tabular-nums text-muted; }
   .analytics-explainer { @apply mt-3 text-xs leading-relaxed text-muted; }
   .analytics-explainer summary { @apply w-fit cursor-pointer py-1 font-semibold hover:text-fg; }
   .analytics-explainer p { @apply mt-1 max-w-2xl; }

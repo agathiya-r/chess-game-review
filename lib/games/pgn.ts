@@ -1,4 +1,4 @@
-import { Chess, DEFAULT_POSITION } from 'chess.js';
+import { Chess, DEFAULT_POSITION, type PieceSymbol, type Square } from 'chess.js';
 import type { Color, GameRecord } from './types';
 import { timeClassFromSeconds } from './types';
 import { chessComBookPlies } from './openingUrl';
@@ -12,10 +12,10 @@ export interface PlyRecord {
   color: Color;
   /** Full move number shown in notation (1. e4 e5 → both are move 1). */
   moveNumber: number;
-  from: string;
-  to: string;
-  captured?: string;
-  piece: string;
+  from: Square;
+  to: Square;
+  captured?: PieceSymbol;
+  piece: PieceSymbol;
   fenBefore: string;
   fenAfter: string;
   /** Remaining clock after the move in seconds, from a [%clk] comment. */
@@ -91,6 +91,7 @@ export function gameFromPgn(pgn: string): GameRecord {
     timeControl: headers.TimeControl,
     timeClass: Number.isFinite(base) ? timeClassFromSeconds(base, inc || 0) : 'unknown',
     opening: headers.Opening,
+    eco: headers.ECO,
     // PGNs downloaded from Chess.com carry the same opening URL as its API.
     bookPlies: chessComBookPlies(headers.ECOUrl),
   };

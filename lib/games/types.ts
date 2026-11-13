@@ -22,10 +22,12 @@ export interface GameRecord {
   /** How the game ended, e.g. "checkmate", "resignation", "time". */
   termination?: string;
   endTime?: number;
+  startedAt?: number;
   timeControl?: string;
   timeClass: TimeClass;
   rated?: boolean;
   opening?: string;
+  eco?: string;
   /** How many plies the source's own opening book covers (Chess.com games). */
   bookPlies?: number;
   /** The perspective to review from, when the game was loaded via a username. */

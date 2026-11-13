@@ -91,22 +91,40 @@ export class StockfishEngine {
   private stopping: Promise<void> | null = null;
   private onStopped: (() => void) | null = null;
   private booted = false;
+  private disposed = false;
+  private rejectBoot?: (error: Error) => void;
 
   constructor(transport: UciTransport = workerTransport(), hashMb = 16) {
     this.transport = transport;
     this.ready = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => this.rejectBoot?.(new Error('Stockfish did not start.')), 15_000);
+      this.rejectBoot = (error) => {
+        clearTimeout(timer);
+        this.rejectBoot = undefined;
+        reject(error);
+      };
       transport.onLine((line) => {
         if (this.booted) return this.onMessage(line);
         if (line === 'uciok') {
           transport.post(`setoption name Hash value ${hashMb}`);
           transport.post('isready');
         } else if (line === 'readyok') {
+          clearTimeout(timer);
+          this.rejectBoot = undefined;
           this.booted = true;
           resolve();
         }
       });
-      transport.onError(reject);
+      transport.onError((error) => {
+        this.rejectBoot?.(error);
+        if (!this.job) return;
+        this.job.timers.forEach(clearTimeout);
+        this.job.reject(error);
+        this.job = null;
+      });
     });
+    // The pool may dispose a worker before it reaches its first search.
+    void this.ready.catch(() => {});
     transport.post('uci');
   }
 
@@ -161,6 +179,7 @@ export class StockfishEngine {
   ): Promise<PositionAnalysis> {
     await this.ready;
     if (this.stopping) await this.stopping;
+    if (this.disposed) throw new AbortError();
     if (this.job) throw new Error('Engine is busy');
 
     if (this.multiPv !== limits.multiPv) {
@@ -232,6 +251,8 @@ export class StockfishEngine {
   }
 
   terminate() {
+    this.disposed = true;
+    this.rejectBoot?.(new AbortError());
     this.cancel();
     this.transport.terminate();
   }
@@ -255,9 +276,10 @@ export class EnginePool {
     private create: () => StockfishEngine = () => new StockfishEngine(),
   ) {}
 
-  private async ensure() {
+  private async ensure(signal?: AbortSignal) {
     if (this.engines.length >= this.size) return;
     await prefetchEngine();
+    if (signal?.aborted) throw new AbortError();
     while (this.engines.length < this.size) this.engines.push(this.create());
   }
 
@@ -270,8 +292,9 @@ export class EnginePool {
     onResult: (index: number, result: PositionAnalysis) => void,
     signal?: AbortSignal,
   ): Promise<PositionAnalysis[]> {
-    await this.ensure();
     if (signal?.aborted) throw new AbortError();
+    if (!jobs.length) return [];
+    await this.ensure(signal);
     const results: PositionAnalysis[] = new Array(jobs.length);
     let next = 0;
 
@@ -280,7 +303,8 @@ export class EnginePool {
       stopped = true;
       this.engines.forEach((e) => e.cancel());
     };
-    signal?.addEventListener('abort', stopAll, { once: true });
+    const abortAll = () => { stopped = true; this.terminate(); };
+    signal?.addEventListener('abort', abortAll, { once: true });
 
     const run = async (engine: StockfishEngine) => {
       while (next < jobs.length && !stopped) {
@@ -296,7 +320,7 @@ export class EnginePool {
       // One failing engine stops the rest so we don't keep burning CPU.
       await Promise.all(this.engines.map((e) => run(e).catch((err) => (stopAll(), Promise.reject(err)))));
     } finally {
-      signal?.removeEventListener('abort', stopAll);
+      signal?.removeEventListener('abort', abortAll);
     }
     if (signal?.aborted) throw new AbortError();
     return results;

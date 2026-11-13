@@ -3,14 +3,17 @@ export type OpeningBook = Record<string, [eco: string, name: string]>;
 let bookPromise: Promise<OpeningBook> | null = null;
 
 /** Lazily load the opening book (≈120 KB gzipped) once per session. */
-export function loadOpeningBook(): Promise<OpeningBook> {
+export function loadOpeningBook(required = false): Promise<OpeningBook> {
   bookPromise ??= fetch('/data/openings.json')
-    .then((r) => (r.ok ? (r.json() as Promise<OpeningBook>) : {}))
-    .catch(() => {
+    .then((r) => {
+      if (!r.ok) throw new Error('Could not load the opening book.');
+      return r.json() as Promise<OpeningBook>;
+    })
+    .catch((err) => {
       bookPromise = null;
-      return {};
+      throw err;
     });
-  return bookPromise;
+  return required ? bookPromise : bookPromise.catch(() => ({}));
 }
 
 /** FEN without the half-move and full-move counters. */

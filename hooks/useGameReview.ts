@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { analysisId, analysisSpec, type StoredDetail } from '@/lib/analytics/model';
+import { analyticsStore } from '@/lib/analytics/store';
 import { buildReview, type ReviewMemo } from '@/lib/analysis/review';
 import { loadOpeningBook, type OpeningBook } from '@/lib/analysis/openings';
 import type { GameReview } from '@/lib/analysis/types';
@@ -43,7 +45,7 @@ function saveSummary(gameId: string, review: GameReview) {
  * streams a classified review back as results arrive. Finished reviews are
  * cached in IndexedDB.
  */
-export function useGameReview(game: GameRecord | null, depth: AnalysisDepth, runId = 0): ReviewState {
+export function useGameReview(game: GameRecord | null, depth: AnalysisDepth, runId = 0, saved?: StoredDetail): ReviewState {
   const poolRef = useRef<EnginePool | null>(null);
   const [state, setState] = useState<Omit<ReviewState, 'parsed'>>({
     review: null,
@@ -77,6 +79,17 @@ export function useGameReview(game: GameRecord | null, depth: AnalysisDepth, run
 
     const run = async () => {
       setState({ review: null, status: 'analyzing', progress: 0, error: null, fromCache: false, stage: 'search' });
+      const stored = runId === 0
+        ? saved ?? await analyticsStore.detail(analysisId(game.id, analysisSpec(depth))).catch(() => undefined)
+        : undefined;
+      if (controller.signal.aborted) return;
+      if (stored && stored.game.pgn === game.pgn && stored.game.bookPlies === game.bookPlies
+        && stored.positions.length === fens.length && stored.positions.every((p, i) => p.fen === fens[i])) {
+        const review = buildReview(plies, stored.positions, stored.book, undefined, game.perspective, game.bookPlies);
+        setState({ review, status: 'done', progress: 1, error: null, fromCache: true, stage: 'deep' });
+        void saveSummary(game.id, review);
+        return;
+      }
       book = await loadOpeningBook();
       if (controller.signal.aborted) return;
 
@@ -124,6 +137,7 @@ export function useGameReview(game: GameRecord | null, depth: AnalysisDepth, run
       });
       if (controller.signal.aborted) return;
 
+      latest = null;
       const review = buildReview(plies, final, book, memo, game.perspective, game.bookPlies);
       setState({ review, status: 'done', progress: 1, error: null, fromCache: false, stage: 'deep' });
       void cacheSet(key, final);
@@ -141,7 +155,7 @@ export function useGameReview(game: GameRecord | null, depth: AnalysisDepth, run
     });
 
     return () => controller.abort();
-  }, [game, parsed, depth, runId]);
+  }, [game, parsed, depth, runId, saved]);
 
   if (!game || !parsed.game) {
     return { parsed: null, review: null, status: parsed.error ? 'error' : 'idle', progress: 0, error: parsed.error, fromCache: false, stage: 'search' };

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { AUTHOR, AUTHOR_URL, SITE_NAME, SITE_URL } from '@/lib/site';
+import 'uplot/dist/uPlot.min.css';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });

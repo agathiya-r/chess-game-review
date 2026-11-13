@@ -4,7 +4,8 @@ import { CLASSIFICATIONS, type GameReview } from '@/lib/analysis/types';
 import type { PositionAnalysis } from '@/lib/engine/uci';
 import type { ParsedGame } from '@/lib/games/pgn';
 import type { Color, GameRecord } from '@/lib/games/types';
-import { analysisId, type AnalysisResult, type AnalysisSpec, type MoveTotals, type SideMetrics } from './model';
+import { analysisId, type AnalysisResult, type AnalysisSpec, type BrilliantMove, type MoveTotals, type SideMetrics } from './model';
+import { brilliantMove } from './brilliants';
 import { detectEvidence } from './patterns';
 
 export function emptyTotals(): MoveTotals {
@@ -23,10 +24,10 @@ export function summarizeGame(
     throw new Error('Stockfish did not finish every position.');
   }
   const id = analysisId(game.id, spec);
-  const sideMetrics = (color: Color): SideMetrics => {
+  const sideMetrics = (color: Color): SideMetrics & { brilliantMoves: BrilliantMove[] } => {
     const summary = color === 'w' ? review.white : review.black;
     const player = color === 'w' ? game.white : game.black;
-    return { summary, moves: emptyTotals(), phases: {}, evidence: [],
+    return { summary, moves: emptyTotals(), phases: {}, evidence: [], brilliantMoves: [],
       estimatedRating: gameRating(summary.accuracy, player.rating, game.timeClass,
         Object.values(summary.counts).reduce((a, b) => a + b, 0)) };
   };
@@ -37,6 +38,7 @@ export function summarizeGame(
     const move = review.moves[index]!;
     const phase = review.phases.find((p) => p.from <= index && p.to >= index)?.phase;
     const side = sides[color];
+    if (move.classification === 'brilliant') side.brilliantMoves.push(brilliantMove(ply));
     const totals = phase ? [side.moves, side.phases[phase] ??= emptyTotals()] : [side.moves];
     for (const row of totals) {
       row.all++;

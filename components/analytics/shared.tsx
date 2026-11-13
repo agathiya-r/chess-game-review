@@ -13,10 +13,19 @@ export const platform = (source: string) => source === 'chesscom' ? 'Chess.com' 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return <label className="grid min-w-0 gap-1.5 text-xs font-semibold text-muted">{label}{children}</label>;
 }
-export function Section({ title, detail, children }: { title: string; detail?: string; children: ReactNode }) {
-  return <section className="card min-w-0 p-4 sm:p-6">
-    <h2 className="text-lg font-bold tracking-tight">{title}</h2>
-    {detail && <p className="mt-1 text-sm text-muted">{detail}</p>}
+export function Section({ id, title, detail, icon, children }: {
+  id?: string;
+  title: string;
+  detail?: string;
+  icon?: ReactNode;
+  children: ReactNode;
+}) {
+  return <section id={id} aria-label={title} className="analytics-section card min-w-0">
+    <div className="flex items-center gap-2.5">
+      {icon && <span aria-hidden="true" className="analytics-section-icon">{icon}</span>}
+      <h2 className="text-lg font-bold tracking-tight sm:text-xl">{title}</h2>
+    </div>
+    {detail && <p className="mt-1.5 max-w-3xl text-sm leading-relaxed text-muted">{detail}</p>}
     <div className="mt-4">{children}</div>
   </section>;
 }

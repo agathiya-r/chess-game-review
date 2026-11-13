@@ -1,8 +1,11 @@
 import { readFileSync } from 'node:fs';
+import { buildReview } from '../lib/analysis/review';
 import type { OpeningBook } from '../lib/analysis/openings';
 import { analyzeForLibrary } from '../lib/analytics/analyze';
-import { analysisSpec } from '../lib/analytics/model';
+import { summarizeGame } from '../lib/analytics/metrics';
+import { analysisSpec, type StoredSummary } from '../lib/analytics/model';
 import { serializeAnalysis } from '../lib/analytics/transfer';
+import { parseGame } from '../lib/games/pgn';
 import { EnginePool } from '../lib/engine/stockfish';
 import { nodeEngine } from '../scripts/support/node-engine';
 import { expect, test, type Page } from '@playwright/test';
@@ -66,6 +69,7 @@ test('selects a sample, pauses, reloads, saves, filters, and retries an engine-b
   await expect(page.getByText('2 of 2 saved games', { exact: false })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(await page.evaluate(() => window.innerWidth));
   await expect(page.getByRole('img', { name: 'Accuracy history chart' }).locator('canvas')).toBeVisible();
+  await page.locator('summary').filter({ hasText: 'Analysis sample', visible: true }).click();
   await page.getByRole('combobox', { name: 'Color', exact: true }).selectOption('w');
   await expect(page.getByText('No analyzed games match these filters.')).toBeVisible();
   await page.getByRole('button', { name: 'Reset filters' }).click();
@@ -161,8 +165,16 @@ test('keeps one profile across tabs and includes independent reviews in the shar
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
   for (const tab of ['Dashboard', 'Openings', 'Weaknesses']) {
     await nav.getByRole('button', { name: tab, exact: true }).click();
-    await expect(page.getByRole('combobox', { name: 'Time control', exact: true })).toHaveValue('rapid');
+    const sample = page.locator('summary').filter({ hasText: 'Analysis sample', visible: true });
+    await expect(sample.getByText('Rapid', { exact: true })).toBeVisible();
+    const time = page.getByRole('combobox', { name: 'Time control', exact: true });
+    await expect(time).toBeHidden();
+    await sample.focus();
+    await page.keyboard.press('Enter');
+    await expect(time).toHaveValue('rapid');
     await expect(page.getByLabel('Through (UTC)', { exact: true }).filter({ visible: true })).toHaveValue('2026-01-02');
+    await sample.click();
+    await expect(time).toBeHidden();
   }
   await nav.getByRole('button', { name: 'Games', exact: true }).click();
   const individual = page.getByRole('button', { name: /Opponent.*1400/ });
@@ -173,6 +185,7 @@ test('keeps one profile across tabs and includes independent reviews in the shar
   await page.getByRole('button', { name: 'Back to games' }).click();
   await nav.getByRole('button', { name: 'Dashboard', exact: true }).click();
   await expect(page.getByText('0 of 1 saved games', { exact: false })).toBeVisible();
+  await page.locator('summary').filter({ hasText: 'Analysis sample', visible: true }).click();
   await page.getByRole('button', { name: 'Reset filters' }).click();
   await expect(page.getByText('1 of 1 saved games', { exact: false })).toBeVisible();
 
@@ -224,4 +237,66 @@ test('saves a matching Lichess link under its provider game ID', async ({ page }
   await nav.getByRole('button', { name: 'Bulk Analysis', exact: true }).click();
   await page.getByRole('button', { name: 'Analyze 1 selected' }).click();
   await expect(page.getByText('1 saved · 1 reused', { exact: false })).toBeVisible();
+});
+
+test('opens a brilliant move from a new or older saved review', async ({ page }) => {
+  const fen = '2r4k/6p1/4Q2p/3p3P/3P2P1/1P3rBK/3q4/4R3 b - - 1 40';
+  const pgn = `[SetUp "1"]
+[FEN "${fen}"]
+
+40... Rxg3+ 41. Kxg3 0-1`;
+  const parsed = parseGame(pgn);
+  const line = (pv: string[], cp: number, rank = 1) => ({ pv, score: { cp }, depth: 20, rank });
+  // The same scored sacrifice position used by the classification regression test.
+  const positions = [
+    { fen, depth: 20, lines: [line(['f3g3', 'h3g3', 'c8c3'], 1369), line(['c8f8', 'e6d6'], 326, 2)] },
+    { fen: parsed.plies[0].fenAfter, depth: 20, lines: [line(['h3g3', 'c8c3'], -1366)] },
+    { fen: parsed.plies[1].fenAfter, depth: 20, lines: [line(['c8c3'], 1366)] },
+  ];
+  const review = buildReview(parsed.plies, positions, {});
+  const games = [
+    gameFixture(11, { pgn, result: '0-1', white: { name: 'NewOpponent' } }),
+    gameFixture(10, { pgn, result: '0-1', white: { name: 'OldOpponent' } }),
+  ];
+  const analyses = games.map((game) => summarizeGame(game, parsed, review, {}, analysisSpec('fast')));
+  expect(analyses[0].summary.sides.b.brilliantMoves).toEqual([{ ply: 0, notation: '40… Rxg3+' }]);
+
+  await mockArchives(page);
+  await page.goto('/?view=bulk');
+  await page.getByPlaceholder('Player handle').fill('TestPlayer');
+  await page.getByRole('button', { name: 'Fetch games' }).click();
+  await expect(page.getByRole('button', { name: 'Deselect player' })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Analysis preset' }).selectOption('fast');
+  await page.getByLabel('Import analysis file').setInputFiles({
+    name: 'brilliant.jsonl', mimeType: 'application/x-ndjson',
+    buffer: Buffer.from(analyses.map(serializeAnalysis).join('\n')),
+  });
+  await expect(page.getByText('2 imported · 0 already saved · 0 invalid')).toBeVisible();
+
+  // Simulate a library saved before the dashboard indexed brilliant moves.
+  await page.evaluate((id) => new Promise<void>((resolve, reject) => {
+    const open = indexedDB.open('chess-review-analytics');
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+      const db = open.result;
+      const tx = db.transaction('summaries', 'readwrite');
+      const store = tx.objectStore('summaries');
+      const request = store.get(id);
+      request.onsuccess = () => {
+        const row = request.result as StoredSummary;
+        delete row.sides.b.brilliantMoves;
+        store.put(row);
+      };
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onabort = () => { db.close(); reject(tx.error); };
+    };
+  }), analyses[1].summary.id);
+  await page.goto('/?view=dashboard');
+  const section = page.getByRole('region', { name: 'Brilliant moves', exact: true });
+  await expect(section.getByText('2 moves in 2 games', { exact: false })).toBeVisible();
+  await expect(section.getByRole('button', { name: /40… Rxg3\+.*NewOpponent/ })).toBeVisible();
+  await section.getByRole('button', { name: /40… Rxg3\+.*OldOpponent/ }).click();
+  await expect(page).toHaveURL(/side=b&ply=0/);
+  await expect(page.getByRole('img', { name: 'Brilliant', exact: true }).filter({ visible: true }).first()).toBeVisible();
+  await expect(page.getByText(/OldOpponent vs TestPlayer/).filter({ visible: true }).first()).toBeVisible();
 });

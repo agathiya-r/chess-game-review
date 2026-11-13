@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Activity, Crosshair, Gauge, Layers3, ListChecks, TrendingUp } from 'lucide-react';
+import { Activity, BookOpen, ChartNoAxesCombined, Crosshair, Gauge, Layers3, ListChecks, TrendingUp } from 'lucide-react';
+import { ClassificationIcon } from '@/components/ClassificationIcon';
 import type { Phase } from '@/lib/analysis/phases';
 import { CLASSIFICATION_LABEL, CLASSIFICATIONS } from '@/lib/analysis/types';
 import { dateLabel } from '@/lib/analytics/history';
@@ -10,6 +11,8 @@ import { aggregate, filterSample, groupSample, PHASES, ratio, sampleFor, trend, 
 import { gameLength, ratingBracket } from '@/lib/analytics/filters';
 import { profileFilters, type AnalysisProfile } from '@/lib/analytics/profile';
 import { ProfileFilters } from './ProfileFilters';
+import { BrilliantMoves } from './BrilliantMoves';
+import { SampleDisclosure } from './SampleDisclosure';
 import { AccuracyChart } from './AccuracyChart';
 import { Empty, Field, Section, Table, num, pct, titleCase, type AnalyticsPage, type OpenReview } from './shared';
 
@@ -54,12 +57,12 @@ export function Dashboard({ rows, page, profile, onProfileChange, onBulk, onRevi
       <h1>{info.title}</h1>
       <p>{info.description}</p>
     </div>
-    {!profile ? <Section title="Choose your player">
+    {!profile ? <Section title="Choose your player" icon={<ListChecks size={20} />}>
       <Empty><p>Set your Chess.com or Lichess username in Bulk Analysis to see your games here.</p>
         <button className="btn btn-primary mt-4" onClick={onBulk}><ListChecks size={16} /> Set up player</button>
       </Empty>
     </Section> : <>
-      <Section title="Analysis sample" detail={`${totals.n.toLocaleString()} of ${sample.length.toLocaleString()} saved games · ${totals.dateRange ? totals.dateRange.map(dateLabel).join(' – ') : 'No known dates in this sample'}`}>
+      <SampleDisclosure key={page} filters={profile.filters} preset={`${titleCase(profile.depth)}${spec && chosenVersion !== specKey(analysisSpec(spec.depth)) ? ' (archived)' : ''}`} detail={`${totals.n.toLocaleString()} of ${sample.length.toLocaleString()} saved games · ${totals.dateRange ? totals.dateRange.map(dateLabel).join(' – ') : 'No known dates in this sample'}`}>
         <ProfileFilters values={profile.filters} onChange={(filters) => onProfileChange({ ...profile, filters })} />
         <div className="mt-3 flex flex-wrap items-end justify-between gap-2">
           <Field label="Analysis preset"><select className="input" value={chosenVersion} onChange={(e) => {
@@ -72,11 +75,12 @@ export function Dashboard({ rows, page, profile, onProfileChange, onBulk, onRevi
           <p className="text-xs text-muted">{spec?.engine} · algorithm v{spec?.algorithm} · metrics v{spec?.metrics}</p>
           <button className="btn btn-ghost border border-line" onClick={() => onProfileChange({ ...profile, filters: {} })}>Reset filters</button>
         </div>
-      </Section>
+      </SampleDisclosure>
       {!matching.length ? <Empty>No analyzed games match these filters.</Empty> : page === 'openings' ? <Openings rows={matching} />
         : page === 'weaknesses' ? <Weaknesses rows={matching} onReview={onReview} />
         : <>
           <Metrics totals={totals} />
+          <BrilliantMoves key={playerKey(profile.source, profile.username) + chosenVersion} rows={matching} onReview={onReview} />
           <History key={playerKey(profile.source, profile.username) + chosenVersion} rows={matching} onReview={onReview} />
           <Breakdown rows={matching} />
           <PhaseTable rows={matching} />
@@ -112,7 +116,7 @@ function History({ rows, onReview }: { rows: SampleGame[]; onReview: OpenReview 
   const [phase, setPhase] = useState<Phase | ''>('');
   const [rating, setRating] = useState(false);
   const points = useMemo(() => trend(rows, interval, window, phase || undefined), [rows, interval, window, phase]);
-  return <Section title="Accuracy over time" detail="Game accuracy approximates Chess.com’s score. Phase trends use graded move accuracy. Accuracy alone does not measure playing strength.">
+  return <Section title="Accuracy over time" icon={<ChartNoAxesCombined size={20} />} detail="Game accuracy approximates Chess.com’s score. Phase trends use graded move accuracy. Accuracy alone does not measure playing strength.">
     <div className="mb-4 flex flex-wrap items-end gap-3">
       <Field label="Group by"><select className="input" value={interval} onChange={(e) => setInterval(e.target.value as Interval)}>
         <option value="game">Game</option><option value="day">Day</option><option value="week">Week (Monday)</option><option value="month">Month</option></select></Field>
@@ -140,7 +144,7 @@ function Breakdown({ rows }: { rows: SampleGame[] }) {
   const [group, setGroup] = useState<Group | ''>('');
   const groups = group ? [...groupSample(rows, groupers[group])] : [];
   const { totals } = aggregate(rows, phase || undefined);
-  return <Section title="Move classifications" detail="Percentages use all classified player moves in this view, including Book and Forced.">
+  return <Section title="Move classifications" icon={<ListChecks size={20} />} detail="Percentages use all classified player moves in this view, including Book and Forced.">
     <div className="mb-4 flex flex-wrap gap-3">
       <Field label="Classification phase"><select className="input" value={phase} onChange={(e) => setPhase(e.target.value as Phase | '')}><option value="">All phases</option>
         {PHASES.map((p) => <option key={p} value={p}>{titleCase(p)}</option>)}</select></Field>
@@ -151,8 +155,9 @@ function Breakdown({ rows }: { rows: SampleGame[] }) {
       <div className="grid gap-1.5 sm:grid-cols-2 sm:gap-x-8">
         {CLASSIFICATIONS.map((c) => {
           const share = 100 * totals.counts[c] / totals.all;
-          return <div className="grid grid-cols-[5.3rem_1fr_7rem] items-center gap-2 text-xs" key={c}>
-            <span>{CLASSIFICATION_LABEL[c]}</span><div className="h-2 overflow-hidden rounded-full bg-surface-3">
+          return <div className="grid grid-cols-[minmax(6.75rem,auto)_1fr_auto] items-center gap-2 text-sm" key={c}>
+            <span className="flex items-center gap-2"><span aria-hidden="true"><ClassificationIcon classification={c} /></span>{CLASSIFICATION_LABEL[c]}</span>
+            <div className="h-2 overflow-hidden rounded-full bg-surface-3">
               <div className="h-full rounded-full" style={{ width: `${share}%`, background: `var(--color-${c})` }} />
             </div><span className="text-right tabular-nums text-muted">{totals.counts[c].toLocaleString()} · {pct(share)}</span>
           </div>;
@@ -170,7 +175,7 @@ function Breakdown({ rows }: { rows: SampleGame[] }) {
 }
 
 function PhaseTable({ rows }: { rows: SampleGame[] }) {
-  return <Section title="Opening, middlegame & endgame" detail="Numeric phase metrics are computed from moves. Book and forced moves are excluded from accuracy, centipawn loss, and blunder rate.">
+  return <Section title="Opening, middlegame & endgame" icon={<Layers3 size={20} />} detail="Numeric phase metrics are computed from moves. Book and forced moves are excluded from accuracy, centipawn loss, and blunder rate.">
     <Table headers={['Phase', 'Games reached', 'Graded moves', 'Move accuracy', 'Avg CP loss', 'Blunder rate']}>
       {PHASES.map((p) => {
         const reached = rows.filter((g) => g.side.phases[p]?.all);
@@ -184,7 +189,7 @@ function PhaseTable({ rows }: { rows: SampleGame[] }) {
 
 function Conditions({ rows }: { rows: SampleGame[] }) {
   const [group, setGroup] = useState<Group>('color');
-  return <Section title="Performance by condition" detail="Each row uses the current filters. Small or very different samples can make comparisons misleading.">
+  return <Section title="Performance by condition" icon={<Activity size={20} />} detail="Each row uses the current filters. Small or very different samples can make comparisons misleading.">
     <div className="mb-3 w-fit"><Field label="Group games by"><select className="input" value={group} onChange={(e) => setGroup(e.target.value as Group)}>
       {Object.entries(groupLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field></div>
     <Table headers={['Group', 'Games', 'Game accuracy', 'Avg CP loss', 'Blunders / game', 'Win rate']}>
@@ -209,7 +214,7 @@ function Openings({ rows }: { rows: SampleGame[] }) {
     .sort((a, b) => sort === 'accuracy' ? (b.a.accuracy ?? -1) - (a.a.accuracy ?? -1) : sort === 'opening' ? (a.openingStats.moveAccuracy ?? 101) - (b.openingStats.moveAccuracy ?? 101)
       : sort === 'wins' ? (b.a.winPct ?? -1) - (a.a.winPct ?? -1) : b.a.n - a.a.n);
   const baseline = aggregate(rows, 'opening').moveAccuracy;
-  return <Section title="Opening repertoire" detail="Game outcomes and game accuracy describe the entire game. Opening move accuracy uses only graded opening moves.">
+  return <Section title="Opening repertoire" icon={<BookOpen size={20} />} detail="Game outcomes and game accuracy describe the entire game. Opening move accuracy uses only graded opening moves.">
     <div className="mb-4 flex flex-wrap items-end gap-3">
       <Field label="Search openings"><input className="input" value={query} placeholder="Name or ECO" onChange={(e) => setQuery(e.target.value)} /></Field>
       <Field label="Sort openings"><select className="input" value={sort} onChange={(e) => setSort(e.target.value)}><option value="games">Most games</option>
@@ -237,10 +242,10 @@ function Openings({ rows }: { rows: SampleGame[] }) {
 function Weaknesses({ rows, onReview }: { rows: SampleGame[]; onReview: OpenReview }) {
   const ranked = useMemo(() => weaknesses(rows), [rows]);
   const evidenceCount = rows.reduce((n, g) => n + g.side.evidence.length, 0);
-  return <Section title="What to practice next" detail={`${rows.length} sampled games · ${evidenceCount} supported positions. Patterns must appear in at least two games to earn a recommendation.`}>
+  return <Section title="What to practice next" icon={<Crosshair size={20} />} detail={`${rows.length} sampled games · ${evidenceCount} supported positions. Patterns must appear in at least two games to earn a recommendation.`}>
     {!ranked.length ? <Empty>There isn’t enough repeat evidence for a recommendation in this sample. Analyze more games or broaden your filters.</Empty>
       : <div className="grid gap-3">{ranked.map((r, i) => <details className="rounded-lg border border-line bg-bg p-4" key={r.pattern} open={i === 0 ? true : undefined}>
-        <summary className="cursor-pointer font-bold">{i + 1}. {r.title} <span className="ml-2 text-xs font-medium text-muted">{r.confidence === 'possible' ? 'Possible pattern' : 'Engine-backed'}</span></summary>
+        <summary className="cursor-pointer font-bold">{r.title} <span className="ml-2 text-xs font-medium text-muted">{r.confidence === 'possible' ? 'Possible pattern' : 'Engine-backed'}</span></summary>
         <p className="mt-2 text-sm text-muted">{r.items.length} positions across {r.gameCount} of {rows.length} games · {num(r.average, 3)} mean and {num(r.total, 2)} total modeled points lost</p>
         <p className="mt-3 text-sm">{r.why} {r.drill}</p>
         <ul className="mt-3 max-h-96 space-y-2 overflow-auto">{r.items.map(({ game, evidence }) =>
@@ -264,7 +269,7 @@ function GameTable({ rows, onReview }: { rows: SampleGame[]; onReview: OpenRevie
     ? (a.side.summary.accuracy ?? Infinity) - (b.side.summary.accuracy ?? Infinity)
     : sort === 'blunders' ? b.side.moves.counts.blunder - a.side.moves.counts.blunder : (b.date ?? 0) - (a.date ?? 0)), [rows, query, sort]);
   const current = Math.min(page, Math.max(0, Math.ceil(shown.length / 20) - 1));
-  return <Section title="Analyzed games" detail="Open a saved game to see its board, classifications, and Stockfish lines.">
+  return <Section title="Analyzed games" icon={<ListChecks size={20} />} detail="Open a saved game to see its board, classifications, and Stockfish lines.">
     <div className="mb-4 flex flex-wrap gap-3">
       <Field label="Search analyzed games"><input className="input" placeholder="Player or opening" value={query} onChange={(e) => { setQuery(e.target.value); setPage(0); }} /></Field>
       <Field label="Sort analyzed games"><select className="input" value={sort} onChange={(e) => { setSort(e.target.value); setPage(0); }}>

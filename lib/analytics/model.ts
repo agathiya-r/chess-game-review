@@ -41,12 +41,18 @@ export interface Evidence {
   loss: number;
   detail: string;
 }
+export interface BrilliantMove {
+  ply: number;
+  notation: string;
+}
 export interface SideMetrics {
   summary: PlayerSummary;
   estimatedRating: number | null;
   moves: MoveTotals;
   phases: Partial<Record<Phase, MoveTotals>>;
   evidence: Evidence[];
+  /** Older summaries omit this. Their moves can be recovered from saved details. */
+  brilliantMoves?: BrilliantMove[];
 }
 export interface StoredSummary {
   id: string;

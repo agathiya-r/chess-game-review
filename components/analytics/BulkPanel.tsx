@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronRight, Database } from 'lucide-react';
+import { ChevronRight, Database, Download, ListChecks } from 'lucide-react';
 import { collectHistory, dateLabel, gameDate } from '@/lib/analytics/history';
 import { analyticsStore, StorageError } from '@/lib/analytics/store';
 import { analysisId, MAX_BATCH_GAMES, playerColor, playerKey, completedResult, PRESET_ORDER, type BatchJob } from '@/lib/analytics/model';
@@ -10,6 +10,7 @@ import type { GameRecord } from '@/lib/games/types';
 import { DEPTH_PRESETS, type AnalysisDepth } from '@/lib/settings';
 import type { AnalyticsState } from '@/hooks/useAnalytics';
 import { profileFilters, type AnalysisProfile, type PlayerAccount, type ProfileFilters as FilterValues } from '@/lib/analytics/profile';
+import { SampleDisclosure } from './SampleDisclosure';
 import { ProfileFilters } from './ProfileFilters';
 import { Empty, Field, Section, Table, platform, titleCase, type OpenReview } from './shared';
 
@@ -138,10 +139,10 @@ export function BulkPanel({ analytics, initialAccount, profile, onProfileChange,
       <h1>Bulk analysis</h1>
       <p>Find games from your public history and queue them for Stockfish.</p>
     </div>
-    <Section title={profile ? 'Find games' : 'Set up your player'} detail={profile
-      ? 'Filters apply across all analysis tabs. Dates use UTC.'
-      : 'Fetching games sets this username and platform as your active player.'}>
-      <form className="grid gap-4" onSubmit={(e) => { e.preventDefault(); void search(); }}>
+    <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); void search(); }}>
+      <SampleDisclosure filters={filters} preset={profile ? titleCase(depth) : undefined} initiallyOpen
+        detail={profile ? 'Choose which games to fetch. These filters also apply to your dashboard.'
+          : 'Fetch games to set your active player.'}>
         <fieldset disabled={loading} className="grid min-w-0 gap-3">
           {!profile && <div className="grid grid-cols-2 gap-3">
             <Field label="Platform"><select className="input" value={source} onChange={(e) => setAccount({ ...account, source: e.target.value as PlayerAccount['source'] })}>
@@ -156,19 +157,19 @@ export function BulkPanel({ analytics, initialAccount, profile, onProfileChange,
             {count === 'custom' && <Field label="Custom count"><input className="input" type="number" min={1} max={MAX_BATCH_GAMES} value={custom} onChange={(e) => setCustom(e.target.valueAsNumber || 0)} /></Field>}
           </div>
         </fieldset>
-        <div className="flex flex-wrap items-center gap-3">
-          <button className="btn btn-primary" type="submit" disabled={loading}>Fetch games</button>
-          {loading && <button className="btn btn-ghost border border-line" type="button" onClick={() => request.current?.abort()}>Stop fetching</button>}
-          {message && <span role="status" className="text-sm text-muted">{message}</span>}
-        </div>
-      </form>
-      {loadError && <p role="alert" className="mt-4 text-sm text-danger">{loadError}</p>}
-      {notice && <p className="mt-4 text-sm text-muted">{notice}</p>}
-      {profile && !loading && loadedKey && !currentSelection && <p className="mt-4 text-sm text-muted">Fetch again to select games with the updated filters.</p>}
-      {!loading && currentSelection && !games.length && !loadError && <p className="mt-4 text-sm text-muted">No finished standard games matched these filters.</p>}
-    </Section>
+      </SampleDisclosure>
+      <div className="flex flex-wrap items-center gap-3">
+        <button className="btn btn-primary" type="submit" disabled={loading || !username.trim()}>Fetch games</button>
+        {loading && <button className="btn btn-ghost border border-line" type="button" onClick={() => request.current?.abort()}>Stop fetching</button>}
+        {message && <span role="status" className="text-sm text-muted">{message}</span>}
+      </div>
+      {loadError && <p role="alert" className="text-sm text-danger">{loadError}</p>}
+      {notice && <p className="text-sm text-muted">{notice}</p>}
+      {profile && !loading && loadedKey && !currentSelection && <p className="text-sm text-muted">Fetch again to select games with the updated filters.</p>}
+      {!loading && currentSelection && !games.length && !loadError && <p className="text-sm text-muted">No finished standard games matched these filters.</p>}
+    </form>
 
-    {!!games.length && currentSelection && <Section title="Select and analyze" detail={`${username} · ${platform(source)} · ${games.length.toLocaleString()} matching games`}>
+    {!!games.length && currentSelection && <Section title="Select and analyze" icon={<ListChecks size={20} />} detail={`${username} · ${platform(source)} · ${games.length.toLocaleString()} matching games`}>
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <Field label="Search fetched games"><input className="input" placeholder="Player or opening" value={query} onChange={(e) => { setQuery(e.target.value); setPage(0); }} /></Field>
         <Field label="Sort games"><select className="input" value={order} onChange={(e) => { setOrder(e.target.value); setPage(0); }}><option value="latest">Newest first</option><option value="earliest">Oldest first</option></select></Field>
@@ -195,7 +196,7 @@ export function BulkPanel({ analytics, initialAccount, profile, onProfileChange,
       <p className="mt-3 text-xs text-muted">{DEPTH_PRESETS[depth].hint}. Finished games at this preset are reused. Choose a deeper preset to analyze the same selection again.</p>
     </Section>}
 
-    <Section title="Batch queue" detail="Analysis runs while this app is open. After a reload, resume an unfinished batch to continue.">
+    <Section title="Batch queue" icon={<Database size={20} />} detail="Analysis runs while this app is open. After a reload, resume an unfinished batch to continue.">
       {analytics.error && <div role="alert" className="mb-4 rounded-lg border border-danger/50 p-3 text-sm">{analytics.error}
         {!analytics.ready && <button className="ml-2 underline" onClick={() => void analytics.reload()}>Retry loading</button>}
       </div>}
@@ -310,7 +311,7 @@ function ImportPanel({ onSaved }: { onSaved: AnalyticsState['saved'] }) {
       setBusy(false);
     }
   };
-  return <Section title="Import CLI analyses" detail="Add a versioned JSONL file produced by the player analysis command. Existing compatible games are kept.">
+  return <Section title="Import CLI analyses" icon={<Download size={20} />} detail="Add a versioned JSONL file produced by the player analysis command. Existing compatible games are kept.">
     <input className="input max-w-full text-sm" type="file" aria-label="Import analysis file" accept=".jsonl,.ndjson"
       disabled={busy} onChange={(e) => {
         const file = e.target.files?.[0];

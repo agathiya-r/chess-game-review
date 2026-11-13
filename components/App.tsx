@@ -1,13 +1,14 @@
 'use client';
 
-import { Cpu, Github, Lock, RefreshCw, Sparkles } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Activity, BookOpen, Cpu, Crosshair, Gamepad2, Github, ListChecks, Lock, RefreshCw, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GameList, GameListSkeleton } from '@/components/home/GameList';
 import { GameLoader, type LoaderSource, type RecentSearch } from '@/components/home/GameLoader';
 import dynamic from 'next/dynamic';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import type { AnalyticsPage, OpenReview } from '@/components/analytics/shared';
-import type { LibraryPreference } from '@/components/analytics/Dashboard';
+import { ActivePlayer } from '@/components/analytics/ActivePlayer';
+import { loadProfile, profileColor, PROFILE_KEY, type AnalysisProfile, type PlayerAccount } from '@/lib/analytics/profile';
 import type { StoredDetail, StoredSummary } from '@/lib/analytics/model';
 import { analyticsStore } from '@/lib/analytics/store';
 import { ReviewScreen } from '@/components/review/ReviewScreen';
@@ -22,7 +23,8 @@ import { AUTHOR, AUTHOR_URL, REPO_URL } from '@/lib/site';
 const BulkPanel = dynamic(() => import('@/components/analytics/BulkPanel').then((m) => m.BulkPanel));
 const Dashboard = dynamic(() => import('@/components/analytics/Dashboard').then((m) => m.Dashboard));
 const NAV = [
-  ['games', 'Games'], ['bulk', 'Bulk Analysis'], ['dashboard', 'Dashboard'], ['openings', 'Openings'], ['weaknesses', 'Weaknesses'],
+  ['games', 'Games', Gamepad2], ['bulk', 'Bulk Analysis', ListChecks], ['dashboard', 'Dashboard', Activity],
+  ['openings', 'Openings', BookOpen], ['weaknesses', 'Weaknesses', Crosshair],
 ] as const;
 type Page = 'games' | AnalyticsPage;
 const readPage = (params: URLSearchParams): Page => NAV.find(([id]) => id === params.get('view'))?.[0] ?? 'games';
@@ -59,9 +61,12 @@ function syncUrl(params: Record<string, string | undefined>, push = false) {
 export function App() {
   const analytics = useAnalytics();
   const [page, setPage] = useState<Page>('games');
-  const [bulkDefaults, setBulkDefaults] = useState<{ source: 'chesscom' | 'lichess'; name: string }>();
+  const [bulkDefaults, setBulkDefaults] = useState<PlayerAccount>();
+  const [profileState, setProfileState] = useState<AnalysisProfile | null>();
+  const [profileReady, setProfileReady] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [setupCount, setSetupCount] = useState(0);
   const [libraryOpened, setLibraryOpened] = useState(false);
-  const [preference, setPreference] = useState<LibraryPreference>();
   const [libraryReview, setLibraryReview] = useState<LibraryReview>();
   const [reviewError, setReviewError] = useState('');
   const [reviewDepth, setReviewDepth] = useState<Settings['depth']>();
@@ -84,7 +89,7 @@ export function App() {
   const requestId = useRef(0);
   const reviewRequest = useRef(0);
 
-  const restoreLibrary = useCallback(async (params: URLSearchParams, initial = false) => {
+  const restoreLibrary = useCallback(async (params: URLSearchParams) => {
     const id = params.get('saved');
     const color = params.get('side');
     if (!id || (color !== 'w' && color !== 'b')) return;
@@ -97,9 +102,6 @@ export function App() {
       if (!row || !detail) throw new Error('This saved review is not available in this browser.');
       const n = params.get('ply');
       const ply = n !== null && /^\d+$/.test(n) ? Number(n) : undefined;
-      if (initial) setPreference({
-        source: row.game.source, name: (color === 'w' ? row.game.white : row.game.black).name, depth: row.spec.depth,
-      });
       setReviewDepth(row.spec.depth);
       setLibraryReview({ row, detail, ply, retry: params.get('retry') === '1' });
       setGame({ ...detail.game, perspective: color });
@@ -154,14 +156,18 @@ export function App() {
     // without a hydration mismatch on the prerendered page.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSettings(loadSettings());
-    setRecent(readRecent());
+    const history = readRecent();
+    setRecent(history);
+    const localProfile = loadProfile();
+    setProfileState(localProfile);
+    setProfileReady(true);
     const params = new URLSearchParams(window.location.search);
     const target = readPage(params);
     if (target !== 'games' || params.has('saved')) {
       setPage(target);
-      if (target === 'bulk') setBulkDefaults({ source: readRecent()[0]?.source ?? 'chesscom', name: readRecent()[0]?.username ?? '' });
+      if (target === 'bulk') setBulkDefaults(history[0] ?? { source: 'chesscom', username: '' });
       else setLibraryOpened(true);
-      void restoreLibrary(params, true);
+      void restoreLibrary(params);
       return;
     }
     const src = params.get('src');
@@ -174,13 +180,21 @@ export function App() {
       return;
     }
     // Most visits are "review my latest game": reopen the last player's games.
-    const last = readRecent()[0];
+    const last = localProfile ?? history[0];
     if (last) {
       setSource(last.source);
       setUsername(last.username);
       void search(last.source, last.username);
     }
   }, [search, restoreLibrary]);
+
+  useEffect(() => {
+    const syncProfile = (event: StorageEvent) => {
+      if (event.key === PROFILE_KEY || event.key === null) setProfileState(loadProfile());
+    };
+    window.addEventListener('storage', syncProfile);
+    return () => window.removeEventListener('storage', syncProfile);
+  }, []);
 
   // Once games are listed a review is likely next: fetch the engine while idle.
   useEffect(() => {
@@ -194,7 +208,7 @@ export function App() {
       const params = new URLSearchParams(window.location.search);
       const target = readPage(params);
       setPage(target);
-      if (target === 'bulk') setBulkDefaults((prev) => prev ?? { source: 'chesscom', name: '' });
+      if (target === 'bulk') setBulkDefaults((prev) => prev ?? { source: 'chesscom', username: '' });
       if (target !== 'games' && target !== 'bulk') setLibraryOpened(true);
       ++reviewRequest.current;
       setOpeningReview(false);
@@ -215,7 +229,7 @@ export function App() {
     setLibraryReview(undefined);
     setGame(null);
     setPage(target);
-    if (target === 'bulk') setBulkDefaults((prev) => prev ?? { source: source === 'lichess' ? 'lichess' : 'chesscom', name: username });
+    if (target === 'bulk') setBulkDefaults((prev) => prev ?? { source: source === 'lichess' ? 'lichess' : 'chesscom', username });
     if (target !== 'games' && target !== 'bulk') setLibraryOpened(true);
     syncUrl(target === 'games' ? (searched ? { src: searched.source, u: searched.username } : {}) : { view: target }, push);
     window.scrollTo({ top: 0 });
@@ -225,7 +239,7 @@ export function App() {
     setLibraryReview(undefined);
     setGame(g);
     window.scrollTo({ top: 0 });
-    if (searched && g.source !== 'pgn') syncUrl({ src: searched.source, u: searched.username, g: g.id }, true);
+    if (searched && games.some((listed) => listed.id === g.id)) syncUrl({ src: searched.source, u: searched.username, g: g.id }, true);
   };
 
   const openSaved: OpenReview = (row, color, ply, retry) => {
@@ -266,8 +280,8 @@ export function App() {
     setError(null);
     setLoading(true);
     try {
-      const pgn = (await fetchLichessGameByUrl(text)) ?? text;
-      openGame(gameFromPgn(pgn));
+      const linkedGame = await fetchLichessGameByUrl(text);
+      openGame(linkedGame ?? gameFromPgn(text));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not read this PGN.');
     } finally {
@@ -275,51 +289,92 @@ export function App() {
     }
   };
 
+  // Existing bulk libraries get their most recent batch's player on first launch.
+  const latestBatch = analytics.jobs.reduce<typeof analytics.jobs[number] | undefined>((latest, job) =>
+    !latest || job.createdAt > latest.createdAt ? job : latest, undefined);
+  const profile = profileState === undefined && latestBatch
+    ? { source: latestBatch.source, username: latestBatch.username, depth: latestBatch.spec.depth, filters: {} }
+    : profileState ?? null;
+  const ownColor = game && !libraryReview ? profileColor(profile, game) : null;
+  const updateProfile = (value: AnalysisProfile | null) => {
+    setProfileState(value);
+    try {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(value));
+      setProfileError('');
+    } catch {
+      setProfileError('Your player settings could not be saved in this browser.');
+    }
+  };
+  const deselect = () => {
+    if (analytics.active) analytics.stop('pause');
+    updateProfile(null);
+    navigate('bulk');
+    setBulkDefaults({ source: profile?.source ?? 'chesscom', username: '' });
+    setSetupCount((count) => count + 1);
+  };
+
   const updateSettings = (s: Settings) => {
     if (libraryReview) setReviewDepth(s.depth);
-    const next = libraryReview ? { ...s, depth: settings.depth } : s;
+    if (ownColor && profile && s.depth !== profile.depth) updateProfile({ ...profile, depth: s.depth, version: undefined });
+    const next = libraryReview || ownColor ? { ...s, depth: settings.depth } : s;
     setSettings(next);
     saveSettings(next);
   };
 
-  const latestBatch = analytics.jobs.reduce<typeof analytics.jobs[number] | undefined>((latest, job) =>
-    !latest || job.createdAt > latest.createdAt ? job : latest, undefined);
-  const libraryDefault = preference ?? (latestBatch ? { source: latestBatch.source, name: latestBatch.username, depth: latestBatch.spec.depth } : undefined);
+  const reviewGame = useMemo(() => game && ownColor && game.perspective !== ownColor
+    ? { ...game, perspective: ownColor } : game, [game, ownColor]);
+  const reviewSettings = libraryReview && reviewDepth ? { ...settings, depth: reviewDepth }
+    : ownColor && profile ? { ...settings, depth: profile.depth } : settings;
+
+  const openPage = (target: Page) => {
+    navigate(target);
+    if (target === 'games' && profile && !searched && !loading && source !== 'pgn') {
+      setSource(profile.source);
+      setUsername(profile.username);
+      void search(profile.source, profile.username);
+    }
+  };
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header
-        className={cn('sticky top-0 z-40 border-b border-line/70 bg-bg/85 pt-[env(safe-area-inset-top)] backdrop-blur', game && 'hidden lg:block')}
-      >
-        <div className="mx-auto flex max-w-[1320px] flex-wrap items-center gap-x-4 px-4 sm:gap-x-6">
-          <button type="button" onClick={() => navigate('games')} className="flex h-13 items-center gap-2.5" aria-label="Home">
+    <div className={cn('app-shell min-h-dvh', !game && 'app-shell-with-rail')}>
+      <header className={cn('app-navigation', game && 'hidden lg:block')}>
+        <div className="app-brand-row">
+          <button type="button" onClick={() => openPage('games')} className="flex min-h-11 shrink-0 items-center gap-2.5" aria-label="Home">
             <Logo />
-            <span className="text-[17px] font-extrabold tracking-tight">
-              Game<span className="text-accent">Review</span>
-            </span>
+            <span className="text-[18px] font-extrabold tracking-tight">Game<span className="text-accent">Review</span></span>
           </button>
-          <span className="ml-auto text-[11px] text-muted sm:order-last lg:text-xs">{analytics.active ? 'Batch analyzing locally' : 'Stockfish 17 · runs locally'}</span>
-          <nav aria-label="Main navigation" className="flex w-full items-center gap-1 overflow-x-auto sm:order-none sm:w-auto">
-            {NAV.map(([id, label]) => <button key={id} type="button" aria-current={!game && page === id ? 'page' : undefined}
-              className="analytics-nav-item" onClick={() => navigate(id)}>{label}</button>)}
-          </nav>
+          {game ? <span className="text-xs text-muted">Stockfish 17 · runs locally</span>
+            : <span className="app-engine-status">{analytics.active ? 'Batch running' : 'Stockfish 17'}</span>}
         </div>
+        {!game && <>
+          <nav aria-label="Main navigation" className="app-nav-links">
+            {NAV.map(([id, label, Icon]) => <button key={id} type="button" aria-current={page === id ? 'page' : undefined}
+              className="analytics-nav-item" onClick={() => openPage(id)}><Icon size={19} aria-hidden />{label}</button>)}
+          </nav>
+          {(page !== 'games' || profile) && profileReady && <div className="app-profile">
+            <ActivePlayer profile={profile} onSetup={() => openPage('bulk')} onClear={deselect} />
+            {profileError && <p role="alert" className="mt-2 text-xs text-danger">{profileError}</p>}
+          </div>}
+        </>}
       </header>
 
-      <main className="flex-1">
+      <main className="app-main min-w-0">
         {(openingReview || reviewError) && <p role={reviewError ? 'alert' : 'status'} className="mx-auto max-w-6xl px-4 pt-4 text-sm text-muted">{reviewError || 'Opening saved review…'}</p>}
-        {game && <ReviewScreen key={libraryReview ? `${libraryReview.row.id}:${game.perspective}:${libraryReview.ply}:${libraryReview.retry}` : game.id}
-          game={game} settings={libraryReview && reviewDepth ? { ...settings, depth: reviewDepth } : settings}
+        {reviewGame && <ReviewScreen key={libraryReview ? `${libraryReview.row.id}:${reviewGame.perspective}:${libraryReview.ply}:${libraryReview.retry}` : reviewGame.id}
+          game={reviewGame} settings={reviewSettings}
           onSettingsChange={updateSettings} onBack={closeGame}
+          onLibrarySave={ownColor ? analytics.saved : undefined}
           saved={libraryReview?.detail} initialPly={libraryReview?.ply} initialRetry={libraryReview?.retry} />}
-        {bulkDefaults && <div className="analytics-wrap" hidden={!!game || page !== 'bulk'}>
-          <BulkPanel analytics={analytics} initialSource={bulkDefaults.source} initialName={bulkDefaults.name} onReview={openSaved}
-            onDashboard={(source, name, depth) => { setPreference({ source, name, depth }); navigate('dashboard'); }} />
-        </div>}
+        {bulkDefaults && profileReady && (profileState !== undefined || analytics.ready || analytics.error) &&
+          <div className="analytics-wrap" hidden={!!game || page !== 'bulk'}>
+            <BulkPanel key={setupCount} analytics={analytics} initialAccount={bulkDefaults} profile={profile}
+              onProfileChange={updateProfile} onReview={openSaved} onDashboard={() => navigate('dashboard')} />
+          </div>}
         {libraryOpened && <div className="analytics-wrap" hidden={!!game || page === 'games' || page === 'bulk'}>
-          {analytics.ready ? <Dashboard key={preference ? JSON.stringify(preference) : 'default'} rows={analytics.summaries}
-            page={page === 'games' || page === 'bulk' ? 'dashboard' : page} preference={libraryDefault}
-            onBulk={() => navigate('bulk')} onReview={openSaved} /> : <p role={analytics.error ? 'alert' : 'status'} className="text-sm text-muted">{analytics.error ?? 'Loading the local library…'}</p>}
+          {analytics.ready && profileReady ? <Dashboard rows={analytics.summaries}
+            page={page === 'games' || page === 'bulk' ? 'dashboard' : page} profile={profile}
+            onProfileChange={updateProfile} onBulk={() => navigate('bulk')} onReview={openSaved} />
+            : <p role={analytics.error ? 'alert' : 'status'} className="text-sm text-muted">{analytics.error ?? 'Loading the local library…'}</p>}
         </div>}
         {!game && page === 'games' && (
           <div className={cn('mx-auto w-full max-w-3xl px-4 pb-16', searched ? 'pt-4 sm:pt-8' : 'pt-8 sm:pt-16')}>
@@ -411,7 +466,7 @@ export function App() {
 
       <footer
         className={cn(
-          'border-t border-line/70 px-4 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center text-[12px] text-subtle',
+          'app-footer border-t border-line/70 px-4 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center text-[12px] text-subtle',
           game && 'hidden lg:block',
         )}
       >

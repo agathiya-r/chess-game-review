@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#161512',
+  themeColor: '#232220',
   colorScheme: 'dark',
   // Lets the layout use the whole screen (notch, home indicator) with safe-area padding.
   viewportFit: 'cover',

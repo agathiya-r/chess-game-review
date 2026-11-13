@@ -1,3 +1,4 @@
+import { gameFromPgn } from './pgn';
 import { chessComBookPlies } from './openingUrl';
 import type { GameRecord, TimeClass } from './types';
 
@@ -217,7 +218,7 @@ interface LichessGame {
 
 const lichessName = (p: LichessPlayer) => p.user?.name ?? (p.aiLevel ? `Stockfish level ${p.aiLevel}` : 'Anonymous');
 
-function normaliseLichess(g: LichessGame, username: string): GameRecord {
+function normaliseLichess(g: LichessGame, username?: string): GameRecord {
   const speed = g.speed === 'correspondence' ? 'daily' : g.speed === 'ultraBullet' ? 'bullet' : g.speed;
   const white = lichessName(g.players.white);
   const black = lichessName(g.players.black);
@@ -237,7 +238,7 @@ function normaliseLichess(g: LichessGame, username: string): GameRecord {
     rated: g.rated,
     opening: g.opening?.name,
     eco: g.opening?.eco,
-    perspective: black.toLowerCase() === username.toLowerCase() ? 'b' : 'w',
+    perspective: username ? (black.toLowerCase() === username.toLowerCase() ? 'b' : 'w') : undefined,
   };
 }
 
@@ -263,13 +264,27 @@ export async function fetchLichessGames(username: string, cursor: string | null,
   return { games, cursor: raw.length === size && oldest ? String(oldest) : null };
 }
 
-/** Fetch a single Lichess game from its URL or 8-char id. */
-export async function fetchLichessGameByUrl(input: string): Promise<string | null> {
-  const m = /lichess\.org\/(?:game\/export\/)?([a-zA-Z0-9]{8})/.exec(input.trim());
-  if (!m) return null;
-  const res = await fetch(`https://lichess.org/game/export/${m[1]}?clocks=true`);
-  if (!res.ok) throw new SourceError('Could not load that Lichess game.');
-  return res.text();
+/** Load a game with the same provider identity used by the history adapter. */
+export async function fetchLichessGameByUrl(input: string): Promise<GameRecord | null> {
+  let link: URL;
+  try { link = new URL(input.trim()); }
+  catch { return null; }
+  if (link.hostname !== 'lichess.org' || !['https:', 'http:'].includes(link.protocol)) return null;
+  const match = /^\/(?:game\/export\/)?([a-zA-Z0-9]{8})(?:[a-zA-Z0-9]{4})?(?:\/(?:white|black))?\/?$/.exec(link.pathname);
+  if (!match) return null;
+  try {
+    const game = await sourceRequest(
+      `https://lichess.org/game/export/${match[1]}?clocks=true&opening=true&pgnInJson=true&evals=false`,
+      (response) => response.json() as Promise<LichessGame>, {}, { headers: { Accept: 'application/json' } },
+    );
+    if (!game.pgn) throw new Error('Missing PGN');
+    // Preserve the standalone PGN path for variants. Player analytics uses standard games.
+    if (game.variant !== 'standard') return gameFromPgn(game.pgn);
+    return normaliseLichess(game);
+  } catch (error) {
+    if (error instanceof SourceError && error.message.startsWith('Rate limited')) throw error;
+    throw new SourceError('Could not load that Lichess game.');
+  }
 }
 
 export function fetchGames(source: 'chesscom' | 'lichess', username: string, cursor: string | null, options?: PageOptions) {

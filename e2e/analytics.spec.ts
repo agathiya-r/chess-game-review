@@ -8,15 +8,17 @@ import { nodeEngine } from '../scripts/support/node-engine';
 import { expect, test, type Page } from '@playwright/test';
 import { gameFixture, MATE } from '../tests/fixtures/analytics';
 
-async function mockArchives(page: Page) {
-  await page.route('https://api.chess.com/pub/player/testplayer/games/**', async (route) => {
+async function mockArchives(page: Page, user = 'testplayer') {
+  const base = `https://api.chess.com/pub/player/${user}/games`;
+  await page.route(`${base}/**`, async (route) => {
     if (route.request().url().endsWith('/archives')) {
-      return route.fulfill({ headers: { 'Access-Control-Allow-Origin': '*' }, json: { archives: ['https://api.chess.com/pub/player/testplayer/games/2026/01'] } });
+      return route.fulfill({ headers: { 'Access-Control-Allow-Origin': '*' }, json: { archives: [`${base}/2026/01`] } });
     }
-    const games = [
+    const source = user === 'testplayer' ? [
       gameFixture(1), gameFixture(2), gameFixture(3, { timeClass: 'blitz' }),
       gameFixture(4, { pgn: 'invalid PGN' }),
-    ].map((g) => ({
+    ] : [gameFixture(6, { black: { name: 'OtherPlayer' } })];
+    const games = source.map((g) => ({
       url: `https://www.chess.com/game/live/${g.endTime}`, uuid: g.id.split(':')[1], pgn: g.pgn,
       end_time: g.endTime! / 1000, rules: 'chess', time_class: g.timeClass, time_control: g.timeControl, rated: g.rated,
       white: { username: g.white.name, rating: g.white.rating, result: 'win' },
@@ -130,11 +132,96 @@ test('imports the CLI format and keeps duplicate imports out of the sample', asy
     const result = await analyzeForLibrary(gameFixture(1), analysisSpec('fast'), pool, undefined, undefined, book);
     text = serializeAnalysis(result) + '\n' + serializeAnalysis(result) + '\n{}\n';
   } finally { pool.terminate(); }
+  await mockArchives(page);
   await page.goto('/?view=bulk');
+  await page.getByPlaceholder('Player handle').fill('TestPlayer');
+  await page.getByRole('button', { name: 'Fetch games' }).click();
+  await expect(page.getByRole('button', { name: 'Deselect player' })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Analysis preset' }).selectOption('fast');
   await page.getByLabel('Import analysis file').setInputFiles({
     name: 'games.jsonl', mimeType: 'application/x-ndjson', buffer: Buffer.from(text),
   });
   await expect(page.getByText('1 imported · 1 already saved · 1 invalid')).toBeVisible();
   await page.getByRole('button', { name: 'Dashboard', exact: true }).click();
   await expect(page.getByText('1 of 1 saved games', { exact: false })).toBeVisible();
+});
+
+test('keeps one profile across tabs and includes independent reviews in the shared sample', async ({ page }) => {
+  await mockArchives(page);
+  await mockArchives(page, 'otherplayer');
+  await page.goto('/?view=bulk');
+  await page.getByPlaceholder('Player handle').fill('TestPlayer');
+  await page.getByRole('combobox', { name: 'Time control', exact: true }).selectOption('rapid');
+  await page.getByLabel('From (UTC)', { exact: true }).fill('2026-01-01');
+  await page.getByLabel('Through (UTC)', { exact: true }).fill('2026-01-02');
+  await page.getByRole('button', { name: 'Fetch games' }).click();
+  await expect(page.getByRole('button', { name: 'Analyze 2 selected' })).toBeEnabled();
+  await page.getByRole('combobox', { name: 'Analysis preset' }).selectOption('fast');
+
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  for (const tab of ['Dashboard', 'Openings', 'Weaknesses']) {
+    await nav.getByRole('button', { name: tab, exact: true }).click();
+    await expect(page.getByRole('combobox', { name: 'Time control', exact: true })).toHaveValue('rapid');
+    await expect(page.getByLabel('Through (UTC)', { exact: true }).filter({ visible: true })).toHaveValue('2026-01-02');
+  }
+  await nav.getByRole('button', { name: 'Games', exact: true }).click();
+  const individual = page.getByRole('button', { name: /Opponent.*1400/ });
+  await expect(individual).toHaveCount(4);
+  // The second most recent game is Blitz and outside the sample's date window.
+  await individual.nth(1).click();
+  await expect(page.getByText('Saved to player analytics', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to games' }).click();
+  await nav.getByRole('button', { name: 'Dashboard', exact: true }).click();
+  await expect(page.getByText('0 of 1 saved games', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Reset filters' }).click();
+  await expect(page.getByText('1 of 1 saved games', { exact: false })).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByText('1 of 1 saved games', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Deselect player' }).click();
+  await expect(page.getByPlaceholder('Player handle')).toHaveValue('');
+  await page.getByPlaceholder('Player handle').fill('OtherPlayer');
+  await page.getByRole('button', { name: 'Fetch games' }).click();
+  await expect(page.getByRole('button', { name: 'Analyze 1 selected' })).toBeEnabled();
+  await nav.getByRole('button', { name: 'Dashboard', exact: true }).click();
+  await expect(page.getByText('0 of 0 saved games', { exact: false })).toBeVisible();
+
+  // Selecting the original account brings back its saved review.
+  await page.getByRole('button', { name: 'Deselect player' }).click();
+  await page.getByPlaceholder('Player handle').fill('TestPlayer');
+  await page.getByRole('button', { name: 'Fetch games' }).click();
+  await expect(page.getByRole('button', { name: 'Analyze 4 selected' })).toBeEnabled();
+  await page.getByRole('combobox', { name: 'Analysis preset' }).selectOption('fast');
+  await nav.getByRole('button', { name: 'Dashboard', exact: true }).click();
+  await expect(page.getByText('1 of 1 saved games', { exact: false })).toBeVisible();
+});
+
+test('saves a matching Lichess link under its provider game ID', async ({ page }) => {
+  const game = {
+    id: 'abcdefgh', rated: true, variant: 'standard', speed: 'rapid', status: 'mate', winner: 'white',
+    createdAt: Date.UTC(2026, 0, 2), lastMoveAt: Date.UTC(2026, 0, 2),
+    players: { white: { user: { name: 'Opponent' } }, black: { user: { name: 'TestPlayer' } } },
+    clock: { initial: 600, increment: 0 }, pgn: MATE,
+  };
+  await page.route('https://lichess.org/api/games/user/TestPlayer?**', (route) =>
+    route.fulfill({ headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(game) + '\n' }));
+  await page.route('https://lichess.org/game/export/abcdefgh?**', (route) =>
+    route.fulfill({ headers: { 'Access-Control-Allow-Origin': '*' }, json: game }));
+  await page.goto('/?view=bulk');
+  await page.getByRole('combobox', { name: 'Platform' }).selectOption('lichess');
+  await page.getByPlaceholder('Player handle').fill('TestPlayer');
+  await page.getByRole('button', { name: 'Fetch games' }).click();
+  await expect(page.getByRole('button', { name: 'Analyze 1 selected' })).toBeEnabled();
+  await page.getByRole('combobox', { name: 'Analysis preset' }).selectOption('fast');
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  await nav.getByRole('button', { name: 'Games', exact: true }).click();
+  await page.getByRole('button', { name: 'Change', exact: true }).click();
+  await page.getByRole('tab', { name: 'PGN / link' }).click();
+  await page.getByRole('textbox', { name: 'PGN or game link' }).fill('https://lichess.org/abcdefgh/black');
+  await page.getByRole('button', { name: 'Review game' }).click();
+  await expect(page.getByText('Saved to player analytics', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to games' }).click();
+  await nav.getByRole('button', { name: 'Bulk Analysis', exact: true }).click();
+  await page.getByRole('button', { name: 'Analyze 1 selected' }).click();
+  await expect(page.getByText('1 saved · 1 reused', { exact: false })).toBeVisible();
 });

@@ -11,6 +11,7 @@ import { formatScore, type PositionAnalysis } from '@/lib/engine/uci';
 import { figurine } from '@/lib/format';
 import type { PlyRecord } from '@/lib/games/pgn';
 import type { GameRecord } from '@/lib/games/types';
+import { libraryStatusText, type LibraryStatus } from '@/hooks/useGameReview';
 import type { NavState } from '@/lib/review/navigation';
 import type { Settings } from '@/lib/settings';
 import { AUTHOR, REPO_URL } from '@/lib/site';
@@ -28,6 +29,7 @@ export interface MobileReviewProps {
   game: GameRecord;
   mode: 'summary' | 'review';
   onModeChange: (mode: 'summary' | 'review') => void;
+  libraryStatus?: LibraryStatus;
   onBack: () => void;
   settings: Settings;
   onSettingsChange: (s: Settings) => void;
@@ -139,6 +141,9 @@ export function MobileReview(p: MobileReviewProps) {
         <div className="sticky top-0 z-30 border-b border-line/70 bg-bg/95 pt-[env(safe-area-inset-top)] backdrop-blur">{header}</div>
         <div className="mx-auto max-w-xl space-y-4 px-3 pt-3 pb-32">
           <CoachBubble message={p.coach} />
+          {p.libraryStatus && <p role="status" className="text-xs text-muted">
+            {libraryStatusText[p.libraryStatus]}
+          </p>}
           {p.review ? (
             <EvalGraph evals={p.review.evals} moves={p.review.moves} plies={p.plies} current={p.nav.current} onSelect={p.goto} height={84} />
           ) : (

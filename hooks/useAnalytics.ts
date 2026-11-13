@@ -56,10 +56,10 @@ export function useAnalytics() {
     setJobs((prev) => updateById(prev, job));
     channel.current?.postMessage({ job });
   };
-  const saved = (summary: StoredSummary) => {
+  const saved = useCallback((summary: StoredSummary) => {
     setSummaries((prev) => updateById(prev, summary));
     channel.current?.postMessage({ summary });
-  };
+  }, []);
   const run = async (id: string, retry = false) => {
     if (active) return;
     setError(null);

@@ -1,7 +1,8 @@
 import { CLASSIFICATIONS } from '@/lib/analysis/types';
 import type { Phase } from '@/lib/analysis/phases';
-import type { Color, GameResult, TimeClass } from '@/lib/games/types';
+import type { Color, GameResult } from '@/lib/games/types';
 import { dateLabel, gameDate } from './history';
+import { matchesFilters, type Filters } from './filters';
 import { emptyTotals } from './metrics';
 import { completedResult, playerColor, specKey, type Evidence, type MoveTotals, type Pattern, type SideMetrics, type StoredSummary } from './model';
 
@@ -31,29 +32,10 @@ export function sampleFor(rows: StoredSummary[], source: string, username: strin
   return [...byGame.values()].sort((a, b) => (a.date ?? -Infinity) - (b.date ?? -Infinity) || a.row.game.id.localeCompare(b.row.game.id));
 }
 
-export interface Filters {
-  since?: number;
-  until?: number;
-  time?: TimeClass;
-  color?: Color;
-  result?: GameResult;
-  rated?: boolean;
-  length?: string;
-  rating?: string;
-}
-export const gameLength = (plies: number) => plies <= 40 ? 'Short (≤20)' : plies <= 80 ? 'Medium (21–40)' : 'Long (41+)';
-export const ratingBracket = (rating?: number) => rating === undefined ? 'Unknown rating' : rating < 1000 ? 'Below 1000'
-  : rating < 1500 ? '1000–1499' : rating < 2000 ? '1500–1999' : rating < 2500 ? '2000–2499' : '2500+';
-
 export function filterSample(rows: SampleGame[], filters: Filters) {
-  return rows.filter((g) => (filters.since === undefined || (g.date !== undefined && g.date >= filters.since!))
-    && (filters.until === undefined || (g.date !== undefined && g.date <= filters.until!))
-    && (!filters.time || g.row.game.timeClass === filters.time)
-    && (!filters.color || g.color === filters.color)
-    && (!filters.result || g.result === filters.result)
-    && (filters.rated === undefined || g.row.game.rated === filters.rated)
-    && (!filters.rating || ratingBracket(g.opponentRating) === filters.rating)
-    && (!filters.length || gameLength(g.row.plies) === filters.length));
+  return rows.filter((game) => matchesFilters({
+    ...game, timeClass: game.row.game.timeClass, rated: game.row.game.rated,
+  }, filters, () => game.row.plies));
 }
 
 export const ratio = (numerator: number, denominator: number) => denominator ? numerator / denominator : null;

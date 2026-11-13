@@ -35,8 +35,8 @@ export function AccuracyChart({ points, showRating, onReview }: { points: Point[
         ],
         scales: { y: { range: [0, 100] }, ...(withRatings ? { rating: { auto: true } } : {}) },
         axes: [
-          { stroke: '#a5a29c', grid: { stroke: '#3b3834', width: 1 } },
-          { stroke: '#a5a29c', values: (_, values) => values.map((n) => `${n}%`), grid: { stroke: '#3b3834', width: 1 } },
+          { stroke: '#b9b6af', grid: { stroke: '#494642', width: 1 } },
+          { stroke: '#b9b6af', values: (_, values) => values.map((n) => `${n}%`), grid: { stroke: '#494642', width: 1 } },
           ...(withRatings ? [{ stroke: '#f1c780', scale: 'rating', side: 1 as const, grid: { show: false }, size: 49 }] : []),
         ],
         tzDate: (ts) => UPlot.tzDate(new Date(ts * 1000), 'UTC'),

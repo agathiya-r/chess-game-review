@@ -21,7 +21,7 @@ import {
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Chess, DEFAULT_POSITION } from 'chess.js';
 import { useExplorer } from '@/hooks/useExplorer';
-import { useGameReview } from '@/hooks/useGameReview';
+import { libraryStatusText, useGameReview } from '@/hooks/useGameReview';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { AnalysisStage } from '@/lib/analysis/pipeline';
 import { evalPoint } from '@/lib/analysis/review';
@@ -47,7 +47,7 @@ import { MoveList } from './MoveList';
 import { MobileReview } from './MobileReview';
 import { PlayerStrip } from './PlayerStrip';
 import { SettingsMenu } from './SettingsMenu';
-import type { StoredDetail } from '@/lib/analytics/model';
+import type { StoredDetail, StoredSummary } from '@/lib/analytics/model';
 import { SummaryPanel } from './SummaryPanel';
 
 const GOOD = new Set<Classification>(['brilliant', 'great', 'best', 'excellent', 'good', 'book', 'forced']);
@@ -63,6 +63,7 @@ interface ReviewScreenProps {
   onSettingsChange: (s: Settings) => void;
   onBack: () => void;
   saved?: StoredDetail;
+  onLibrarySave?: (row: StoredSummary) => void;
   initialPly?: number;
   initialRetry?: boolean;
 }
@@ -165,11 +166,11 @@ function summaryMessage(
   };
 }
 
-export function ReviewScreen({ game, settings, onSettingsChange, onBack, saved, initialPly, initialRetry }: ReviewScreenProps) {
+export function ReviewScreen({ game, settings, onSettingsChange, onBack, saved, onLibrarySave, initialPly, initialRetry }: ReviewScreenProps) {
   const [runId, setRunId] = useState(0);
   const [savedDepth] = useState(settings.depth);
   const stored = savedDepth === settings.depth ? saved : undefined;
-  const { parsed, review, status, progress, error, stage } = useGameReview(game, settings.depth, runId, stored);
+  const { parsed, review, status, progress, error, stage, libraryStatus } = useGameReview(game, settings.depth, runId, stored, onLibrarySave);
   const plies = useMemo(() => parsed?.plies ?? [], [parsed]);
   const startFen = parsed?.startFen ?? DEFAULT_POSITION;
   const reducer = useMemo(() => navReducer(plies, startFen), [plies, startFen]);
@@ -665,6 +666,7 @@ export function ReviewScreen({ game, settings, onSettingsChange, onBack, saved, 
     if (!parsed) return null;
     return (
       <MobileReview
+        libraryStatus={libraryStatus}
         game={game}
         mode={mode}
         onModeChange={setMode}
@@ -732,6 +734,9 @@ export function ReviewScreen({ game, settings, onSettingsChange, onBack, saved, 
         </div>
       </header>
 
+      {libraryStatus && <p role="status" className="mb-2 text-xs text-muted">
+        {libraryStatusText[libraryStatus]}
+      </p>}
       {error && status === 'error' && (
         <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm">
           <span>{error}</span>

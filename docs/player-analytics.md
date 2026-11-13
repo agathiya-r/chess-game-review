@@ -52,6 +52,20 @@ selected sample's opening average.
   games restart from the beginning of that game. Storage errors pause work;
   quota, private browsing, and clearing site data affect persistence.
 
+## Active player
+
+Bulk Analysis sets one local player by platform and username. The app remembers
+their filters and preset after a reload. Deselecting the player leaves saved
+games and batch progress available when you select them again.
+
+Single-game reviews from the active player's provider history or a matching
+Lichess game link use the profile's
+preset and save finished results to the same library as batches. Reopening a
+compatible cached review also saves it. Reviews of another player or a pasted
+PGN stay in single-game review. Date, time control, result, and other filters
+apply when fetching games and when showing the saved sample. The fetch count
+limits each request for a batch.
+
 ## Training evidence
 
 The detector checks materially different moves against the engine's scored

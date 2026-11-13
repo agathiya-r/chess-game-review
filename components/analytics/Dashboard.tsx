@@ -1,108 +1,83 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Activity, BookOpen, ChevronRight, Crosshair, Gauge, Layers3, ListChecks, TrendingUp } from 'lucide-react';
+import { Activity, Crosshair, Gauge, Layers3, ListChecks, TrendingUp } from 'lucide-react';
 import type { Phase } from '@/lib/analysis/phases';
 import { CLASSIFICATION_LABEL, CLASSIFICATIONS } from '@/lib/analysis/types';
-import { dateLabel, dayEnd, dayStart } from '@/lib/analytics/history';
+import { dateLabel } from '@/lib/analytics/history';
 import { analysisSpec, playerKey, PRESET_ORDER, specKey, type StoredSummary } from '@/lib/analytics/model';
-import { aggregate, filterSample, gameLength, groupSample, PHASES, ratingBracket, ratio, sampleFor, trend, weaknesses, type Filters, type Interval, type SampleGame } from '@/lib/analytics/stats';
-import type { Color, GameResult, TimeClass } from '@/lib/games/types';
-import type { AnalysisDepth } from '@/lib/settings';
+import { aggregate, filterSample, groupSample, PHASES, ratio, sampleFor, trend, weaknesses, type Interval, type SampleGame } from '@/lib/analytics/stats';
+import { gameLength, ratingBracket } from '@/lib/analytics/filters';
+import { profileFilters, type AnalysisProfile } from '@/lib/analytics/profile';
+import { ProfileFilters } from './ProfileFilters';
 import { AccuracyChart } from './AccuracyChart';
-import { Empty, Field, Section, Table, num, pct, platform, TIME_CLASSES, titleCase, type AnalyticsPage, type OpenReview } from './shared';
+import { Empty, Field, Section, Table, num, pct, titleCase, type AnalyticsPage, type OpenReview } from './shared';
 
-export interface LibraryPreference { source: string; name: string; depth: AnalysisDepth }
 type DashboardPage = Exclude<AnalyticsPage, 'bulk'>;
 const pageInfo = {
-  dashboard: { title: 'Player dashboard', description: 'Track your accuracy, compare conditions, and open any game behind the numbers.', icon: Activity },
-  openings: { title: 'Opening performance', description: 'See how you play in the opening and what happens in the rest of those games.', icon: BookOpen },
-  weaknesses: { title: 'Weaknesses & training', description: 'Find recurring mistakes in engine lines, then retry the positions yourself.', icon: Crosshair },
+  dashboard: { title: 'Player dashboard', description: 'Track your accuracy, compare conditions, and open any game behind the numbers.' },
+  openings: { title: 'Opening performance', description: 'See how you play in the opening and what happens in the rest of those games.' },
+  weaknesses: { title: 'Weaknesses & training', description: 'Find recurring mistakes in engine lines, then retry the positions yourself.' },
 };
 
-export function Dashboard({ rows, page, preference, onBulk, onReview }: {
-  rows: StoredSummary[]; page: DashboardPage; preference?: LibraryPreference; onBulk: () => void; onReview: OpenReview;
+export function Dashboard({ rows, page, profile, onProfileChange, onBulk, onReview }: {
+  rows: StoredSummary[];
+  page: DashboardPage;
+  profile: AnalysisProfile | null;
+  onProfileChange: (profile: AnalysisProfile) => void;
+  onBulk: () => void;
+  onReview: OpenReview;
 }) {
-  const [account, setAccount] = useState(() => preference ? playerKey(preference.source, preference.name) : '');
-  const [version, setVersion] = useState(() => preference ? specKey(analysisSpec(preference.depth)) : '');
-  const [filters, setFilters] = useState<Filters>({});
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const accounts = useMemo(() => {
-    const items = new Map<string, { source: string; name: string; count: number }>();
-    const unique = new Set<string>();
-    for (const row of rows) for (const { name } of [row.game.white, row.game.black]) {
-      if (row.game.source === 'pgn' || name === 'Anonymous' || name.startsWith('Stockfish level ')) continue;
-      const key = playerKey(row.game.source, name);
-      const tag = JSON.stringify([key, row.game.id]);
-      if (unique.has(tag)) continue;
-      unique.add(tag);
-      const item = items.get(key) ?? { source: row.game.source, name, count: 0 };
-      item.count++;
-      items.set(key, item);
-    }
-    return [...items].sort(([, a], [, b]) => b.count - a.count || a.name.localeCompare(b.name));
-  }, [rows]);
-  const accountId = accounts.some(([id]) => id === account) ? account : (accounts[0]?.[0] ?? '');
-  const player = accounts.find(([id]) => id === accountId)?.[1];
   const versions = useMemo(() => {
-    const all = new Map<string, StoredSummary['spec']>();
-    if (player) for (const row of rows) {
-      if (row.game.source === player.source && [row.game.white, row.game.black].some((p) => p.name.toLowerCase() === player.name.toLowerCase())) {
+    const all = new Map(PRESET_ORDER.map((depth) => {
+      const spec = analysisSpec(depth);
+      return [specKey(spec), spec] as const;
+    }));
+    if (profile) for (const row of rows) {
+      if (row.game.source === profile.source && [row.game.white, row.game.black].some((p) => p.name.toLowerCase() === profile.username.toLowerCase())) {
         all.set(specKey(row.spec), row.spec);
       }
     }
-    const rank = (depth: AnalysisDepth) => depth === 'standard' ? 3 : PRESET_ORDER.indexOf(depth);
-    return [...all].sort(([ak, a], [bk, b]) => Number(bk === specKey(analysisSpec(b.depth))) - Number(ak === specKey(analysisSpec(a.depth)))
-      || rank(b.depth) - rank(a.depth) || b.algorithm - a.algorithm || b.metrics - a.metrics);
-  }, [rows, player]);
-  const chosenVersion = versions.some(([key]) => key === version) ? version : (versions[0]?.[0] ?? '');
-  const spec = versions.find(([key]) => key === chosenVersion)?.[1];
-  const sample = useMemo(() => player ? sampleFor(rows, player.source, player.name, chosenVersion) : [], [rows, player, chosenVersion]);
-  const matching = useMemo(() => filterSample(sample, filters), [sample, filters]);
+    return all;
+  }, [rows, profile]);
+  const chosenVersion = profile
+    ? profile.version && versions.has(profile.version) ? profile.version : specKey(analysisSpec(profile.depth))
+    : '';
+  const spec = versions.get(chosenVersion);
+  const sample = useMemo(() => profile ? sampleFor(rows, profile.source, profile.username, chosenVersion) : [], [rows, profile, chosenVersion]);
+  const matching = useMemo(() => profile ? filterSample(sample, profileFilters(profile.filters)) : [], [sample, profile]);
   const totals = useMemo(() => aggregate(matching), [matching]);
   const info = pageInfo[page];
-  const update = (filter: Partial<Filters>) => setFilters((prev) => ({ ...prev, ...filter }));
 
   return <div className="grid gap-5">
     <div className="analytics-hero">
-      <span className="analytics-eyebrow"><info.icon size={16} /> PLAYER LAB</span>
       <h1>{info.title}</h1>
       <p>{info.description}</p>
-      <button className="btn btn-ghost mt-4 border border-line" onClick={onBulk}><ListChecks size={16} /> Bulk analysis <ChevronRight size={16} /></button>
     </div>
-    {!player ? <Section title="Your library"><Empty>Analyze a batch of Chess.com or Lichess games to see your stats here.</Empty></Section> : <>
+    {!profile ? <Section title="Choose your player">
+      <Empty><p>Set your Chess.com or Lichess username in Bulk Analysis to see your games here.</p>
+        <button className="btn btn-primary mt-4" onClick={onBulk}><ListChecks size={16} /> Set up player</button>
+      </Empty>
+    </Section> : <>
       <Section title="Analysis sample" detail={`${totals.n.toLocaleString()} of ${sample.length.toLocaleString()} saved games · ${totals.dateRange ? totals.dateRange.map(dateLabel).join(' – ') : 'No known dates in this sample'}`}>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
-          <Field label="Player"><select className="input" value={accountId} onChange={(e) => { setAccount(e.target.value); setVersion(''); }}>
-            {accounts.map(([id, p]) => <option key={id} value={id}>{p.name} · {platform(p.source)}</option>)}</select></Field>
-          <Field label="Analysis settings"><select className="input" value={chosenVersion} onChange={(e) => setVersion(e.target.value)}>
-            {versions.map(([key, s]) => <option key={key} value={key}>{titleCase(s.depth)} · v{s.algorithm}.{s.metrics}{key !== specKey(analysisSpec(s.depth)) ? ' (archived)' : ''}</option>)}</select></Field>
-          <Field label="Time control"><select className="input" value={filters.time ?? ''} onChange={(e) => update({ time: (e.target.value || undefined) as TimeClass | undefined })}>
-            <option value="">Any</option>{TIME_CLASSES.map((v) => <option key={v} value={v}>{titleCase(v)}</option>)}</select></Field>
-          <Field label="Color"><select className="input" value={filters.color ?? ''} onChange={(e) => update({ color: (e.target.value || undefined) as Color | undefined })}>
-            <option value="">Both</option><option value="w">White</option><option value="b">Black</option></select></Field>
-          <Field label="Result"><select className="input" value={filters.result ?? ''} onChange={(e) => update({ result: (e.target.value || undefined) as GameResult | undefined })}>
-            <option value="">Any</option>{['win', 'draw', 'loss'].map((v) => <option key={v} value={v}>{titleCase(v)}</option>)}</select></Field>
-          <Field label="From (UTC)"><input className="input" type="date" max={to || undefined} value={from} onChange={(e) => { setFrom(e.target.value); update({ since: dayStart(e.target.value) }); }} /></Field>
-          <Field label="Through (UTC)"><input className="input" type="date" min={from || undefined} value={to} onChange={(e) => { setTo(e.target.value); update({ until: dayEnd(e.target.value) }); }} /></Field>
-          <Field label="Opponent rating"><select className="input" value={filters.rating ?? ''} onChange={(e) => update({ rating: e.target.value || undefined })}>
-            <option value="">Any</option>{[500, 1200, 1600, 2100, 2700, undefined].map(ratingBracket).map((v) => <option key={v}>{v}</option>)}</select></Field>
-          <Field label="Game length"><select className="input" value={filters.length ?? ''} onChange={(e) => update({ length: e.target.value || undefined })}>
-            <option value="">Any</option>{[20, 60, 100].map(gameLength).map((v) => <option key={v}>{v}</option>)}</select></Field>
-          <Field label="Rated status"><select className="input" value={filters.rated === undefined ? '' : String(filters.rated)} onChange={(e) => update({ rated: e.target.value ? e.target.value === 'true' : undefined })}>
-            <option value="">Any</option><option value="true">Rated only</option><option value="false">Unrated only</option></select></Field>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-muted">{spec?.engine} · algorithm v{spec?.algorithm} · metrics v{spec?.metrics}. Each sample uses one set of analysis settings.</p>
-          <button className="btn btn-ghost border border-line" onClick={() => { setFilters({}); setFrom(''); setTo(''); }}>Reset filters</button>
+        <ProfileFilters values={profile.filters} onChange={(filters) => onProfileChange({ ...profile, filters })} />
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-2">
+          <Field label="Analysis preset"><select className="input" value={chosenVersion} onChange={(e) => {
+            const next = versions.get(e.target.value);
+            if (next) onProfileChange({ ...profile, depth: next.depth,
+              version: e.target.value === specKey(analysisSpec(next.depth)) ? undefined : e.target.value });
+          }}>
+            {[...versions].map(([key, s]) => <option key={key} value={key}>{titleCase(s.depth)}{key !== specKey(analysisSpec(s.depth)) ? ` · v${s.algorithm}.${s.metrics} (archived)` : ''}</option>)}
+          </select></Field>
+          <p className="text-xs text-muted">{spec?.engine} · algorithm v{spec?.algorithm} · metrics v{spec?.metrics}</p>
+          <button className="btn btn-ghost border border-line" onClick={() => onProfileChange({ ...profile, filters: {} })}>Reset filters</button>
         </div>
       </Section>
       {!matching.length ? <Empty>No analyzed games match these filters.</Empty> : page === 'openings' ? <Openings rows={matching} />
         : page === 'weaknesses' ? <Weaknesses rows={matching} onReview={onReview} />
         : <>
           <Metrics totals={totals} />
-          <History key={accountId + chosenVersion} rows={matching} onReview={onReview} />
+          <History key={playerKey(profile.source, profile.username) + chosenVersion} rows={matching} onReview={onReview} />
           <Breakdown rows={matching} />
           <PhaseTable rows={matching} />
           <Conditions rows={matching} />

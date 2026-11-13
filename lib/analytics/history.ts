@@ -1,4 +1,6 @@
 import { fetchGames, type GamePage, type PageOptions } from '@/lib/games/sources';
+import { parseGame } from '@/lib/games/pgn';
+import { matchesFilters, type Filters } from './filters';
 import type { GameRecord } from '@/lib/games/types';
 import { completedResult, playerColor, type BatchJob, type GameMeta } from './model';
 
@@ -9,6 +11,7 @@ export const dateLabel = (time?: number) => time === undefined ? 'Unknown date'
   : new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(time);
 
 interface HistoryOptions extends PageOptions {
+  filters?: Filters;
   limit: number;
   onPage?: (found: number, pages: number) => void;
   onGames?: (games: GameRecord[]) => void;
@@ -20,6 +23,8 @@ export async function collectHistory(source: BatchJob['source'], username: strin
   let pages = 0;
   const games = new Map<string, GameRecord>();
   const seenCursors = new Set<string>();
+  const filters: Filters = { ...options.filters, since: options.since, until: options.until,
+    time: options.timeClass, rated: options.rated };
   const snapshot = { ...options, until: options.until ?? Date.now() };
   do {
     const page = await fetchPage(source, username, cursor, {
@@ -30,12 +35,15 @@ export async function collectHistory(source: BatchJob['source'], username: strin
       if (games.size >= options.limit) break;
       if (game.source !== source) continue;
       const color = playerColor(game, username);
-      if (!color || !completedResult(game, color)) continue;
-      const date = gameDate(game);
-      if (options.since !== undefined && (date === undefined || date < options.since)) continue;
-      if (options.until !== undefined && (date === undefined || date > options.until)) continue;
-      if (options.timeClass && game.timeClass !== options.timeClass) continue;
-      if (options.rated !== undefined && options.rated !== game.rated) continue;
+      if (!color) continue;
+      const result = completedResult(game, color);
+      if (!result) continue;
+      const opponentRating = (color === 'w' ? game.black : game.white).rating;
+      if (!matchesFilters({ date: gameDate(game), timeClass: game.timeClass, color, result, rated: game.rated, opponentRating },
+        filters, () => {
+          try { return parseGame(game.pgn).plies.length; }
+          catch { return undefined; }
+        })) continue;
       if (!games.has(game.id)) games.set(game.id, { ...game, perspective: color });
     }
     if (page.cursor && seenCursors.has(page.cursor)) throw new Error('The source returned the same history page twice.');

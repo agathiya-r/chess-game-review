@@ -59,9 +59,15 @@ current search. **Resume** restarts the interrupted game and skips work already
 committed. A closed browser does not keep analyzing. To search deeper, select
 the same games with the Deep preset; the previous preset stays in your library.
 
-In **Dashboard**, choose one player and one analysis version/preset. Use the
-filters to compare similar games, and the accuracy chart to inspect a point or
-period. **Openings** shows opening-phase move metrics separately from the
+The first successful fetch sets your active player. Bulk Analysis, Dashboard,
+Openings, and Weaknesses share that player's saved filters and analysis preset.
+Use **Deselect player** on the player card to switch accounts. Saved reviews
+remain available when you select that player again.
+
+Open a finished game from your active player's Chess.com or Lichess history in
+**Games** to save its review to the same library automatically. Reviews outside
+the current filters appear when you broaden the sample. Use the accuracy chart
+in **Dashboard** to inspect a point or period. **Openings** shows opening-phase move metrics separately from the
 whole-game results. **Weaknesses** ranks patterns supported by legal engine
 lines in at least two games. Open a move in the original Game Review or choose
 **Retry position** to attempt it before revealing the best line.

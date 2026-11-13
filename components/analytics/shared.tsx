@@ -41,3 +41,16 @@ export function Table({ headers, children }: { headers: string[]; children: Reac
     </table>
   </div>;
 }
+
+export function StatStrip({ entries }: { entries: readonly (readonly [label: string, value: ReactNode])[] }) {
+  return (
+    <dl className="analytics-stat-strip">
+      {entries.map(([label, value]) => (
+        <div key={label}>
+          <dt>{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}

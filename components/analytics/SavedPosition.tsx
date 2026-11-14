@@ -20,11 +20,15 @@ export function useSavedGame(id: string) {
   return loaded?.id === id ? loaded.detail ?? null : undefined;
 }
 
-export function SavedPosition({ fen, color }: { fen: string | null | undefined; color: Color }) {
+export function SavedPosition({ fen, color, lastMove }: {
+  fen: string | null | undefined;
+  color: Color;
+  lastMove?: { from: string; to: string };
+}) {
   return (
     <div className="saved-position">
       {fen ? (
-        <Board fen={fen} orientation={color === 'w' ? 'white' : 'black'} theme="green" className="rounded-sm" />
+        <Board fen={fen} orientation={color === 'w' ? 'white' : 'black'} theme="green" lastMove={lastMove} className="rounded-sm" />
       ) : (
         <div className="saved-position-placeholder">
           {fen === null ? 'Position preview unavailable' : 'Loading position…'}

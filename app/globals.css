@@ -777,60 +777,79 @@ a {
 
   .opening-review:disabled { opacity: .55; }
 
-  .practice-layout {
-    @apply grid min-w-0 overflow-hidden rounded-xl border border-line bg-bg md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] md:grid-rows-[auto_1fr];
+  .practice-notebook {
+    @apply grid min-w-0 overflow-hidden rounded-xl border border-line bg-bg;
   }
-  .practice-position {
-    @apply grid min-w-0 content-center gap-3 border-b border-line p-3.5 sm:p-5 md:row-span-2 md:border-r md:border-b-0 lg:p-6;
-    background: radial-gradient(ellipse at 50% 40%, #3b4932, transparent 76%), #242822;
+  @media (min-width: 900px) {
+    .practice-notebook {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      grid-template-rows: auto 1fr;
+    }
+    .practice-notebook .practice-preview {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      border-inline-start: 1px solid var(--color-line);
+      border-top: 0;
+    }
   }
-  .practice-position-heading,
-  .practice-position-nav {
-    @apply mx-auto flex w-full max-w-[26rem] items-center justify-between gap-2;
-  }
-  .practice-position .saved-position { @apply max-w-[26rem] border-black/50 bg-black/35; }
-  .practice-turn { @apply inline-flex shrink-0 items-center gap-1.5 text-xs font-bold text-fg; }
-  .practice-turn > span {
-    @apply size-2.5 rounded-full border border-white/35;
-    background: #f1ead8;
-  }
-  .practice-turn > span[data-color='b'] { background: #131612; }
-  .practice-position-nav { @apply text-xs font-semibold text-muted tabular-nums; }
-  .practice-position-nav button { @apply size-9 p-0; }
 
-  .practice-task { @apply min-w-0 p-4 sm:p-5 lg:p-6; }
-  .practice-task-heading { @apply flex items-center gap-2.5; }
-  .practice-topic-icon { @apply grid size-9 shrink-0 place-items-center rounded-lg bg-accent/15 text-accent-strong; }
-  .practice-task-heading h3 { @apply text-xl leading-tight font-extrabold tracking-tight break-words sm:text-2xl; }
-  .practice-count { @apply mt-2 text-xs text-muted; }
-  .practice-instruction { @apply mt-3 text-sm leading-relaxed text-fg; }
+  .practice-topics { @apply min-w-0 px-3.5 pt-4 pb-3 sm:px-5; }
+  .practice-topics h3, .practice-index-heading h3 { @apply text-sm font-bold text-fg; }
+  .practice-topics ul { @apply mt-2 flex flex-wrap gap-1.5; }
+  .practice-topics button {
+    @apply flex min-h-9 max-w-full items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2.5 py-1.5 text-left text-xs font-semibold text-muted hover:text-fg;
+  }
+  .practice-topics button svg { @apply shrink-0; }
+  .practice-topics button[aria-pressed='true'] { @apply border-[#806d46] bg-[#473c28] text-[#f1d8a4]; }
+  .practice-topic-count { @apply shrink-0 font-normal tabular-nums; }
+  .practice-topics p { @apply mt-2 text-xs text-muted; }
+
+  .practice-index { @apply min-w-0 px-3.5 pb-4 sm:px-5; }
+  .practice-index-heading {
+    @apply flex items-baseline justify-between gap-2 px-2 pb-2 text-right text-xs text-muted;
+  }
+  .practice-index-heading h3 { @apply text-left; }
+  .practice-index li { @apply border-t border-line; }
+  .practice-index li:last-child { @apply border-b border-line; }
+  .practice-index li button {
+    @apply flex min-h-12 w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left hover:bg-surface-2 sm:px-3;
+  }
+  .practice-index li button[aria-pressed='true'] {
+    @apply bg-[#30392a];
+    box-shadow: inset 3px 0 var(--color-accent-strong);
+  }
+  .practice-index li button:focus-visible { outline-offset: -3px; }
+  .practice-row-game { @apply grid min-w-0 gap-0.5 break-words text-xs text-muted; }
+  .practice-row-game strong { @apply text-sm text-fg; }
+  .practice-notation { @apply shrink-0 text-right font-mono text-xs text-[#f1d8a4] tabular-nums; }
+  .practice-pages { @apply mt-2 flex items-center justify-end gap-1.5 text-xs text-muted tabular-nums; }
+  .practice-pages span { @apply mr-auto; }
+  .practice-pages button:disabled { @apply opacity-50; }
+
+  .practice-preview {
+    @apply min-w-0 border-t border-line px-3.5 py-4 sm:px-5;
+    background: #1d1e1b;
+  }
+  .practice-preview-heading { @apply flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1; }
+  .practice-preview-heading h3 { @apply min-w-0 text-lg font-extrabold tracking-tight break-words; }
+  .practice-preview-heading > span { @apply text-xs text-muted; }
+  .practice-turn { @apply mt-2 mb-2 text-xs font-bold text-accent-strong; }
+  .practice-preview .saved-position { @apply mx-auto max-w-[18rem] border-white/15 bg-black/35; }
+  .practice-actions { @apply mt-3 flex flex-wrap items-stretch gap-2; }
   .practice-start {
-    @apply mt-4 flex min-h-11 w-full items-center justify-between gap-2 rounded-lg bg-accent-strong px-3.5 py-2 text-sm font-extrabold text-[#18210e];
+    @apply flex min-h-10 flex-1 items-center justify-between gap-2 rounded-md bg-accent-strong px-3 py-2 text-sm font-extrabold text-[#18210e];
   }
   .practice-start:hover:not(:disabled) { @apply bg-[#a9d97b]; }
   .practice-start:disabled, .practice-review:disabled { opacity: .55; }
-  .practice-links { @apply mt-1 text-xs text-muted; }
   .practice-review, .practice-evidence > summary {
-    @apply flex min-h-9 w-fit items-center gap-1.5 text-left font-semibold hover:text-fg;
+    @apply flex min-h-9 w-fit items-center gap-1.5 text-left text-xs font-semibold text-muted hover:text-fg;
   }
-  .practice-evidence { @apply border-t border-line; }
+  .practice-evidence { @apply border-t border-line text-xs text-muted; }
   .practice-evidence > summary { @apply cursor-pointer list-none; }
   .practice-evidence > summary::-webkit-details-marker { display: none; }
-  .practice-evidence > div { @apply mt-1 grid gap-2 rounded-lg border border-line bg-surface p-3 leading-relaxed; }
+  .practice-evidence > div { @apply grid gap-2 rounded-md border border-line bg-surface p-3 leading-relaxed; }
   .practice-evidence .analytics-stat-strip { @apply border-t border-line pt-2; }
 
-  .practice-topics { @apply min-w-0 border-t border-line px-4 pt-4 pb-3 sm:px-5 lg:px-6; }
-  .practice-topics h3 { @apply mb-2 text-sm font-bold text-fg; }
-  .practice-topics ul { @apply grid gap-1; }
-  .practice-topics button {
-    @apply grid min-h-11 w-full grid-cols-[1.1rem_minmax(0,1fr)_auto] items-center gap-2 rounded-md px-2.5 py-2 text-left text-xs font-semibold text-muted hover:bg-surface-2 hover:text-fg;
-  }
-  .practice-topics button[aria-pressed='true'] {
-    @apply bg-accent/15 text-accent-strong;
-    box-shadow: inset 3px 0 var(--color-accent-strong);
-  }
-  .practice-topic-title { @apply break-words; }
-  .practice-topic-count { @apply text-right font-normal whitespace-nowrap text-muted tabular-nums; }
   .analytics-explainer { @apply mt-3 text-xs leading-relaxed text-muted; }
   .analytics-explainer summary { @apply w-fit cursor-pointer py-1 font-semibold hover:text-fg; }
   .analytics-explainer p { @apply mt-1 max-w-2xl; }

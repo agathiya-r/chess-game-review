@@ -4,7 +4,7 @@
 
 ### Review individual games and find patterns across your Chess.com or Lichess history.
 
-[![Live demo](https://img.shields.io/badge/▶_Live_demo-chess--game--review.vercel.app-81b64c?style=for-the-badge)](https://chess-game-review.vercel.app)
+[![Live demo](https://img.shields.io/badge/▶_Live_demo-chess--game--review.vercel.app-81b64c?style=for-the-badge)]([https://chess-game-review.vercel.app](https://chess-game-review-delta.vercel.app)
 
 [![CI](https://github.com/agathiya-r/chess-game-review/actions/workflows/ci.yml/badge.svg)](https://github.com/agathiya-r/chess-game-review/actions/workflows/ci.yml)
 ![Next.js](https://img.shields.io/badge/Next.js_16-000?logo=nextdotjs&logoColor=white)

@@ -1,10 +1,10 @@
 <div align="center">
 
-<a href="https://chess-game-review.vercel.app"><img src="docs/screenshots/banner.png" alt="Game Review" width="100%" /></a>
+<a href="https://chess-game-review-delta.vercel.app"><img src="docs/screenshots/banner.png" alt="Game Review" width="100%" /></a>
 
 ### Review individual games and find patterns across your Chess.com or Lichess history.
 
-[![Live demo](https://img.shields.io/badge/▶_Live_demo-chess--game--review.vercel.app-81b64c?style=for-the-badge)]([https://chess-game-review-delta.vercel.app](https://chess-game-review-delta.vercel.app)
+[![Live demo](https://img.shields.io/badge/▶_Live_demo-chess--game--review--delta.vercel.app-81b64c?style=for-the-badge)](https://chess-game-review-delta.vercel.app)
 
 [![CI](https://github.com/agathiya-r/chess-game-review/actions/workflows/ci.yml/badge.svg)](https://github.com/agathiya-r/chess-game-review/actions/workflows/ci.yml)
 ![Next.js](https://img.shields.io/badge/Next.js_16-000?logo=nextdotjs&logoColor=white)
@@ -14,7 +14,7 @@
 ![Stockfish](https://img.shields.io/badge/Stockfish_17.1-WASM-81b64c)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-**[Try it](https://chess-game-review.vercel.app)** · [Player analytics](#player-analytics) · [Single-game review](#single-game-review) · [Run locally](#-run-it-locally)
+**[Try it](https://chess-game-review-delta.vercel.app)** · [Player analytics](#player-analytics) · [Single-game review](#single-game-review) · [Run locally](#-run-it-locally)
 
 </div>
 
@@ -279,7 +279,7 @@ tests/              Vitest suites
 <details>
 <summary><b>☁️ Deployment</b></summary>
 
-Live at **https://chess-game-review.vercel.app**. Every push to `main` deploys to Vercel, and CI runs lint, typecheck, tests and a production build.
+Live at **[https://chess-game-review-delta.vercel.app](https://chess-game-review-delta.vercel.app)**. Every push to `main` deploys to Vercel, and CI runs lint, typecheck, tests and a production build.
 
 The app is static apart from Next.js itself, so it runs anywhere Next.js does (Vercel, Netlify, a Node server). Security headers (CSP, frame and referrer policies) and cache headers for the engine binary are set in `next.config.ts`. The CSP allows outgoing requests only to `api.chess.com` and `lichess.org`. Set `NEXT_PUBLIC_SITE_URL` if you host it on another domain; it's used for canonical URLs, the sitemap and link previews.
 

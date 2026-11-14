@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
-import { ChevronRight, Database, ListChecks, X } from 'lucide-react';
+import { ChevronRight, X } from 'lucide-react';
+import { ChessIcon } from '@/components/ChessIcon';
 import type { AnalyticsState } from '@/hooks/useAnalytics';
 import { batchItemCounts, type BatchProgress } from '@/lib/analytics/jobs';
 import type { BatchJob } from '@/lib/analytics/model';
@@ -24,7 +25,7 @@ export function BulkAnalysisLauncher({ analytics, savedCount, open, onOpen }: {
   return (
     <button type="button" className="bulk-launcher" aria-label="Bulk Analysis"
       aria-haspopup="dialog" aria-controls={DIALOG_ID} aria-expanded={open} aria-describedby="bulk-launcher-status" onClick={onOpen}>
-      <span className="bulk-launcher-icon" aria-hidden="true">{running ? <ListChecks size={17} /> : <Database size={17} />}</span>
+      <span className="bulk-launcher-icon" aria-hidden="true"><ChessIcon name="board-stack-green" size={24} /></span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-bold">Bulk Analysis</span>
         <span id="bulk-launcher-status" className="block text-xs text-muted tabular-nums">{label}</span>
@@ -72,7 +73,7 @@ export function BulkAnalysisDialog({ open, onClose, children }: {
         <header className="bulk-dialog-header">
           <div className="flex items-center justify-between gap-2">
             <h2 id="bulk-dialog-title" className="flex items-center gap-2.5 text-lg font-bold tracking-tight">
-              <ListChecks size={20} className="text-accent-strong" aria-hidden="true" /> Bulk Analysis
+              <ChessIcon name="board-stack-green" size={25} /> Bulk Analysis
             </h2>
             <button type="button" className="icon-btn size-9" aria-label="Close Bulk Analysis" onClick={onClose}>
               <X size={20} aria-hidden="true" />

@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist } from 'next/font/google';
+import { Nunito } from 'next/font/google';
 import { AUTHOR, AUTHOR_URL, SITE_NAME, SITE_URL } from '@/lib/site';
 import 'uplot/dist/uPlot.min.css';
 import './globals.css';
 
-const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' });
+const nunito = Nunito({ subsets: ['latin'], variable: '--font-nunito', display: 'swap' });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#181818',
+  themeColor: '#302e2b',
   colorScheme: 'dark',
   // Lets the layout use the whole screen (notch, home indicator) with safe-area padding.
   viewportFit: 'cover',
@@ -48,7 +48,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={geist.variable}>
+    <html lang="en" className={nunito.variable}>
       <body>{children}</body>
     </html>
   );

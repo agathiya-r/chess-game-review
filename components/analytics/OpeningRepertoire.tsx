@@ -163,7 +163,7 @@ function OpeningFocus({ group, baseline, onReview }: { group: OpeningGroup; base
         <div className="opening-visual">
           <SavedPosition fen={previewFen} color={example.color} />
           <p className="text-xs leading-relaxed text-muted">Example game · {dateLabel(example.date)}</p>
-          <button type="button" className="opening-review" disabled={!detail} onClick={() => onReview(example.row, example.color, ply)}>
+          <button type="button" className="btn btn-primary opening-review" disabled={!detail} onClick={() => onReview(example.row, example.color, ply)}>
             Review example game <ArrowUpRight size={17} aria-hidden="true" />
           </button>
         </div>

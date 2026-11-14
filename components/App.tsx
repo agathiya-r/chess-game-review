@@ -1,12 +1,13 @@
 'use client';
 
-import { Activity, BookOpen, Crosshair, Gamepad2, Github, Lock, RefreshCw } from 'lucide-react';
+import { Github, Lock, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GameList, GameListSkeleton } from '@/components/home/GameList';
 import { GameLoader, type LoaderSource, type RecentSearch } from '@/components/home/GameLoader';
 import dynamic from 'next/dynamic';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import type { AnalyticsPage, OpenReview } from '@/components/analytics/shared';
+import { ChessIcon } from '@/components/ChessIcon';
 import { PageHero } from '@/components/PageHero';
 import { ActivePlayer } from '@/components/analytics/ActivePlayer';
 import { BulkAnalysisDialog, BulkAnalysisLauncher } from '@/components/analytics/BulkAnalysisDialog';
@@ -25,8 +26,8 @@ import { AUTHOR, AUTHOR_URL, REPO_URL } from '@/lib/site';
 const BulkPanel = dynamic(() => import('@/components/analytics/BulkPanel').then((m) => m.BulkPanel));
 const Dashboard = dynamic(() => import('@/components/analytics/Dashboard').then((m) => m.Dashboard));
 const NAV = [
-  ['games', 'Games', Gamepad2], ['dashboard', 'Dashboard', Activity],
-  ['openings', 'Openings', BookOpen], ['weaknesses', 'Weaknesses', Crosshair],
+  ['games', 'Games', 'board-find'], ['dashboard', 'Dashboard', 'magnifier-analysis'],
+  ['openings', 'Openings', 'explorer'], ['weaknesses', 'Weaknesses', 'training'],
 ] as const;
 type Page = 'games' | AnalyticsPage;
 const readPage = (params: URLSearchParams): Page => NAV.find(([id]) => id === params.get('view'))?.[0] ?? 'games';
@@ -381,28 +382,25 @@ export function App() {
   };
 
   return (
-    <div className={cn('app-shell min-h-dvh', !game && 'app-shell-with-rail')}>
+    <div className="app-shell app-shell-with-rail min-h-dvh">
       <a className="app-skip" href="#main-content">Skip to content</a>
-      <header className={cn('app-navigation', game && 'hidden lg:block')}>
+      <header className={cn('app-navigation', game && 'app-navigation-review')}>
         <div className="app-brand-row">
           <button type="button" onClick={() => openPage('games')} className="flex min-h-11 shrink-0 items-center gap-2.5" aria-label="Home">
             <Logo />
             <span className="text-lg font-bold tracking-tight">Game<span className="text-accent">Review</span></span>
           </button>
-          {game ? <span className="text-xs text-muted">Stockfish 17 · runs locally</span>
-            : <span className="app-engine-status">Stockfish 17</span>}
+          <span className="app-engine-status">Stockfish 17</span>
         </div>
-        {!game && <>
-          <nav aria-label="Main navigation" className="app-nav-links">
-            {NAV.map(([id, label, Icon]) => <button key={id} type="button" aria-current={page === id ? 'page' : undefined}
-              className="analytics-nav-item" onClick={() => openPage(id)}><Icon size={19} aria-hidden />{label}</button>)}
-          </nav>
-          <div className="app-profile">
-            <BulkAnalysisLauncher analytics={analytics} savedCount={savedCount} open={bulkOpen} onOpen={openBulk} />
-            {profileReady && profile && <ActivePlayer profile={profile} onClear={deselect} />}
-            {profileError && <p role="alert" className="mt-2 text-xs text-danger">{profileError}</p>}
-          </div>
-        </>}
+        <nav aria-label="Main navigation" className="app-nav-links">
+          {NAV.map(([id, label, icon]) => <button key={id} type="button" aria-current={!game && page === id ? 'page' : undefined}
+            className="analytics-nav-item" onClick={() => openPage(id)}><ChessIcon name={icon} size={24} />{label}</button>)}
+        </nav>
+        {!game && <div className="app-profile">
+          <BulkAnalysisLauncher analytics={analytics} savedCount={savedCount} open={bulkOpen} onOpen={openBulk} />
+          {profileReady && profile && <ActivePlayer profile={profile} onClear={deselect} />}
+          {profileError && <p role="alert" className="mt-2 text-xs text-danger">{profileError}</p>}
+        </div>}
       </header>
 
       <main id="main-content" tabIndex={-1} className="app-main min-w-0">

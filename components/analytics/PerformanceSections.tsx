@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { TimeControlIcon } from '@/components/ChessIcon';
+import type { TimeClass } from '@/lib/games/types';
 import {
-  Activity, CalendarDays, CircleHelp, Clock3, Flag, Gauge, Hourglass, Layers3, ListOrdered, Minus,
-  Rocket, Swords, Timer, Trophy, X, Zap, type LucideIcon,
+  Activity, CalendarDays, CircleHelp, Clock3, Flag, Gauge, Layers3, ListOrdered, Minus,
+  Swords, Timer, Trophy, X, type LucideIcon,
 } from 'lucide-react';
 import { ChessSideIcon } from './ChessSideIcon';
 import { aggregate, groupSample, PHASES, type SampleGame } from '@/lib/analytics/stats';
@@ -24,17 +26,12 @@ export const groupLabels: Record<Group, string> = {
 const groupIcons: Record<Group, LucideIcon> = {
   color: Layers3, time: Clock3, result: Trophy, rating: Gauge, length: ListOrdered, month: CalendarDays,
 };
-const timeIcons: Record<string, LucideIcon> = {
-  Bullet: Rocket, Blitz: Zap, Rapid: Timer, Classical: Hourglass, Daily: CalendarDays,
-};
 const resultIcons: Record<string, LucideIcon> = { Win: Trophy, Draw: Minus, Loss: X };
 
 function ConditionIcon({ group, label }: { group: Group; label: string }) {
   if (group === 'color') return <ChessSideIcon color={label === 'White' ? 'w' : 'b'} />;
-  const Icon = group === 'time' ? timeIcons[label] ?? CircleHelp
-    : group === 'result' ? resultIcons[label] ?? CircleHelp
-    : groupIcons[group];
-  return <span className="condition-icon" data-result={group === 'result' ? label.toLowerCase() : undefined} aria-hidden="true"><Icon size={17} /></span>;
+  const Icon = group === 'result' ? resultIcons[label] ?? CircleHelp : groupIcons[group];
+  return <span className="condition-icon" data-result={group === 'result' ? label.toLowerCase() : undefined} aria-hidden="true">{group === 'time' ? <TimeControlIcon time={label.toLowerCase() as TimeClass} /> : <Icon size={17} />}</span>;
 }
 
 const phaseIcons = { opening: Flag, middlegame: Swords, endgame: Timer };

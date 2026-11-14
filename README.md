@@ -22,6 +22,8 @@
 
 Review a game move by move, track your accuracy over time, or practice positions from your own games. Stockfish 17.1 runs in your browser. Your active player, filters, and saved reviews stay on this device.
 
+The interface follows Chess.com’s dark theme, with the familiar green board, color icons, and a board beside the review panel on desktop.
+
 ![Player dashboard showing accuracy history, win rate, and the cached game count above the player card](docs/screenshots/analytics-dashboard.webp)
 
 ## Player analytics
@@ -303,5 +305,7 @@ Copyright © 2026 [@ritstar](https://github.com/ritstar). Released under the **[
 - [Stockfish](https://stockfishchess.org) and [stockfish.js](https://github.com/nmrugg/stockfish.js) (GPLv3)
 - [chess.js](https://github.com/jhlywa/chess.js) (BSD-2-Clause) and [react-chessboard](https://github.com/Clariity/react-chessboard) (MIT)
 - Opening data: [lichess-org/chess-openings](https://github.com/lichess-org/chess-openings) (CC0)
+- Chess.com move classification and time control icons from its [brand resources](https://www.chess.com/article/view/chess-com-brand-resources), and feature icons from its [Analysis page](https://www.chess.com/analysis). These assets belong to Chess.com.
+- [Nunito](https://fonts.google.com/specimen/Nunito) is used for display text as a substitute for Chess Sans.
 
 <div align="center"><sub>Not affiliated with Chess.com or Lichess.</sub></div>

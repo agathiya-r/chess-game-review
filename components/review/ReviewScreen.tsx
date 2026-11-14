@@ -44,6 +44,7 @@ import { EngineLines } from './EngineLines';
 import { EvalBar } from './EvalBar';
 import { EvalGraph } from './EvalGraph';
 import { MoveList } from './MoveList';
+import { ChessIcon } from '@/components/ChessIcon';
 import { MobileReview } from './MobileReview';
 import { PlayerStrip } from './PlayerStrip';
 import { SettingsMenu } from './SettingsMenu';
@@ -709,7 +710,7 @@ export function ReviewScreen({ game, settings, onSettingsChange, onBack, saved, 
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1320px] px-4 pb-10 [--board-size:min(calc(100dvh_-_17rem),calc(100vw_-_33rem),780px)]">
+    <div className="desktop-review">
       <header className="flex items-center gap-3 py-3">
         <button type="button" onClick={onBack} className="btn btn-ghost -ml-2 px-2" aria-label="Back to games">
           <ArrowLeft size={20} /> Games
@@ -750,7 +751,7 @@ export function ReviewScreen({ game, settings, onSettingsChange, onBack, saved, 
       )}
 
       {parsed && (
-        <div className="grid grid-cols-[auto_minmax(360px,1fr)] items-start gap-4">
+        <div className="desktop-review-layout">
           <section className="flex flex-col" aria-label="Board">
             <div className="pl-[1.75rem]">{strip(topColor)}</div>
             <div className="flex gap-2">
@@ -795,8 +796,9 @@ export function ReviewScreen({ game, settings, onSettingsChange, onBack, saved, 
             </div>
           </section>
 
-          <aside className="card flex h-[calc(var(--board-size)_+_8.25rem)] flex-col overflow-hidden" aria-label="Review">
-            <div className="flex items-center border-b border-line">
+          <aside className="review-panel card flex h-[calc(var(--board-size)_+_8.25rem)] flex-col overflow-hidden" aria-label="Review">
+            <div className="review-panel-title"><ChessIcon name="magnifier-analysis" size={23} /> Game Review</div>
+            <div className="review-panel-tabs">
               {(['summary', 'review'] as const).map((t) => (
                 <button
                   key={t}

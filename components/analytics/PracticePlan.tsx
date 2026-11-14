@@ -140,7 +140,7 @@ function PracticePreview({ item: { game, evidence }, topic, onReview }: {
       </p>
       <SavedPosition fen={revealed && best ? best.fenAfter : fen} color={game.color} lastMove={revealed ? best : undefined} />
       <div className="practice-actions">
-        <button type="button" className="practice-start" disabled={!fen}
+        <button type="button" className="btn btn-primary practice-start" disabled={!fen}
           onClick={() => onReview(game.row, game.color, evidence.ply, true)}>
           Try this position <ArrowRight size={17} aria-hidden="true" />
         </button>

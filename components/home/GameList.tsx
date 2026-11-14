@@ -1,6 +1,7 @@
 'use client';
 
-import { CalendarDays, ChevronRight, Hourglass, Rocket, Timer, Zap, type LucideIcon } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import { TimeControlIcon } from '@/components/ChessIcon';
 import { useEffect, useMemo, useState } from 'react';
 import { summaryKey, type ReviewSummary } from '@/hooks/useGameReview';
 import { cacheGet } from '@/lib/cache';
@@ -17,20 +18,11 @@ const CLASS_LABEL: Record<TimeClass, string> = {
   unknown: 'Other',
 };
 
-const CLASS_ICON: Record<TimeClass, LucideIcon> = {
-  bullet: Rocket,
-  blitz: Zap,
-  rapid: Timer,
-  classical: Hourglass,
-  daily: CalendarDays,
-  unknown: Timer,
-};
-
 const PAGE = 40;
 
 const RESULT_STYLE = {
-  win: { label: 'Won', className: 'bg-accent text-white' },
-  loss: { label: 'Lost', className: 'bg-danger text-white' },
+  win: { label: 'Won', className: 'bg-accent/20 text-accent-strong' },
+  loss: { label: 'Lost', className: 'bg-danger/15 text-danger' },
   draw: { label: 'Draw', className: 'bg-surface-3 text-fg' },
 };
 
@@ -72,13 +64,12 @@ export function GameList({ games, onSelect, loadingMore, hasMore, onLoadMore }: 
       {classes.length > 1 && (
         <div className="no-scrollbar -mx-4 mb-3 flex gap-2 overflow-x-auto px-4" role="tablist" aria-label="Filter by time control">
           {(['all', ...classes] as const).map((c) => {
-            const Icon = c === 'all' ? null : CLASS_ICON[c];
             return (
               <button key={c} type="button" className="chip shrink-0 py-1.5" data-active={filter === c} onClick={() => {
                   setFilter(c);
                   setLimit(PAGE);
                 }}>
-                {Icon && <Icon size={14} />}
+                {c !== 'all' && <TimeControlIcon time={c} size={16} />}
                 {c === 'all' ? 'All' : CLASS_LABEL[c]}
               </button>
             );
@@ -92,7 +83,6 @@ export function GameList({ games, onSelect, loadingMore, hasMore, onLoadMore }: 
           const result = resultFor(g, me);
           const meP = me === 'w' ? g.white : g.black;
           const opp = me === 'w' ? g.black : g.white;
-          const Icon = CLASS_ICON[g.timeClass];
           const summary = summaries[g.id];
           const accuracy = summary ? (me === 'w' ? summary.white : summary.black) : null;
           return (
@@ -108,7 +98,7 @@ export function GameList({ games, onSelect, loadingMore, hasMore, onLoadMore }: 
                     RESULT_STYLE[result].className,
                   )}
                 >
-                  <Icon size={15} strokeWidth={2.5} />
+                  <TimeControlIcon time={g.timeClass} size={18} />
                   {RESULT_STYLE[result].label}
                 </span>
                 <span className="min-w-0 flex-1">

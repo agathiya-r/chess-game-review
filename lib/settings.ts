@@ -44,7 +44,7 @@ const GRAIN =
   'repeating-linear-gradient(97deg, rgba(255,255,255,.06) 0 1px, transparent 1px 4px, rgba(0,0,0,.05) 4px 5px, transparent 5px 9px), linear-gradient(170deg, rgba(255,255,255,.08), rgba(0,0,0,.06))';
 
 export const BOARD_THEMES: Record<BoardTheme, { light: string; dark: string; label: string; texture?: string }> = {
-  green: { light: '#ebecd0', dark: '#739552', label: 'Green' },
+  green: { light: '#eeeed2', dark: '#769656', label: 'Green' },
   wood: { light: '#e6c79c', dark: '#ae7c4e', label: 'Wood', texture: GRAIN },
   brown: { light: '#f0d9b5', dark: '#b58863', label: 'Brown' },
   blue: { light: '#dee3e6', dark: '#8ca2ad', label: 'Blue' },

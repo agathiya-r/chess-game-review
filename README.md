@@ -53,9 +53,11 @@ Browse the openings you actually play. Filter by opening name or ECO code and sp
 
 ### What to practice next
 
-**Weaknesses** finds recurring patterns supported by engine lines in at least two games. Pick a topic and browse the original positions. **Practice position** lets you try a better move before revealing the answer. **Review move** opens the same position in Game Review.
+**Weaknesses** finds recurring patterns supported by engine lines in at least two games. Choose a practice topic and use the arrows below the board to browse positions from your games. The board shows whose turn it is and which game the position came from.
 
-![Practice view with a recurring weakness, a position from a saved game, and practice and review buttons](docs/screenshots/practice-plan.webp)
+Select **Practice position** to try a better move before seeing the answer, or **Review move** to open the original move in Game Review. Expand **Why this position?** to see what happened and how much the move cost.
+
+![Practice view showing a rook endgame position, whose turn it is, and a list of recurring practice topics](docs/screenshots/practice-plan.webp)
 
 ### Bulk Analysis
 

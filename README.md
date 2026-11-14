@@ -2,11 +2,11 @@
 
 <a href="https://chess-game-review.vercel.app"><img src="docs/screenshots/banner.png" alt="Game Review" width="100%" /></a>
 
-### Chess.com-style game review, free and private, with Stockfish 17 running in your browser.
+### Review individual games and find patterns across your Chess.com or Lichess history.
 
 [![Live demo](https://img.shields.io/badge/▶_Live_demo-chess--game--review.vercel.app-81b64c?style=for-the-badge)](https://chess-game-review.vercel.app)
 
-[![CI](https://github.com/ritstar/chess-game-review/actions/workflows/ci.yml/badge.svg)](https://github.com/ritstar/chess-game-review/actions/workflows/ci.yml)
+[![CI](https://github.com/agathiya-r/chess-game-review/actions/workflows/ci.yml/badge.svg)](https://github.com/agathiya-r/chess-game-review/actions/workflows/ci.yml)
 ![Next.js](https://img.shields.io/badge/Next.js_16-000?logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React_19-20232a?logo=react&logoColor=61dafb)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white)
@@ -14,67 +14,63 @@
 ![Stockfish](https://img.shields.io/badge/Stockfish_17.1-WASM-81b64c)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-**[Try it](https://chess-game-review.vercel.app)** · [Features](#-features) · [How it works](#-how-the-analysis-works) · [Run locally](#-run-it-locally) · [Author](#-author)
+**[Try it](https://chess-game-review.vercel.app)** · [Player analytics](#player-analytics) · [Single-game review](#single-game-review) · [Run locally](#-run-it-locally)
 
 </div>
 
 ---
 
-Type your **Chess.com** or **Lichess** username, tap a game and get a full review in seconds: every move rated from Brilliant to Blunder, accuracy for both players, the key moments, and a coach that explains *why* in plain English. No account, no uploads and no limits, because the engine runs on your own device.
+Review a game move by move, track your accuracy over time, or practice positions from your own games. Stockfish 17.1 runs in your browser. Your active player, filters, and saved reviews stay on this device.
 
-<div align="center">
-
-<img src="docs/demo.gif" alt="Demo: open a game, step through the review, a Great move pops, then a mistake is explained" width="320" />
-
-<sub>Open a game → summary → step through the moves → a <b>Great</b> move pops → a mistake explained, with the best move shown</sub>
-
-<br /><br />
-
-| Pick a game | Summary | Review | Details |
-|:---:|:---:|:---:|:---:|
-| <img src="docs/screenshots/phone-list.png" width="200" alt="Game list" /> | <img src="docs/screenshots/phone-summary.png" width="200" alt="Game summary with accuracy" /> | <img src="docs/screenshots/phone-review.png" width="200" alt="Move-by-move review" /> | <img src="docs/screenshots/phone-details.png" width="200" alt="Explanation and engine lines" /> |
-
-<img src="docs/screenshots/desktop-review.png" alt="Desktop review" width="100%" />
-
-</div>
+![Player dashboard showing accuracy history, win rate, and the cached game count above the player card](docs/screenshots/analytics-dashboard.webp)
 
 ## Player analytics
 
-Run locally with Node.js 22 or later:
+Choose a Chess.com or Lichess username in **Bulk Analysis**. The first successful fetch sets your active player. Bulk Analysis, Dashboard, Openings, and Weaknesses share that player’s filters and analysis preset. Open **Analysis sample** on any analytics page to adjust the date range, time control, color, result, or other filters.
 
-```sh
-npm ci
-npm run dev
-```
+Finished reviews from **Games** join the same library when they belong to the active player. Change the sample filters to see reviews saved outside the current selection. To switch accounts, use **Deselect player** on the player card and fetch games for a new username. The previous player’s reviews are available when you switch back.
 
-Open **Bulk Analysis** above the player card, choose Chess.com or Lichess, and enter your public
-username. Select **Rapid** and **100** to fetch your latest 100 finished rapid
-games, or use the date and rated filters to build a different sample. Games are
-selected when loaded; use the checkboxes to change the batch. Pick an analysis
-preset and a worker count, then choose **Analyze selected**. Start with 10 games
-if you want to see results quickly.
+### Dashboard
 
-The launcher shows your cached game count and switches to live progress while
-a batch runs. You can close the panel and use the other pages during analysis.
-The queue reports saved, reused, failed, and pending games. **Pause** stops the
-current search. **Resume** restarts the interrupted game and skips work already
-committed. A closed browser does not keep analyzing. To search deeper, select
-the same games with the Deep preset; the previous preset stays in your library.
+Track accuracy and win rate, switch the accuracy chart between individual games and longer periods, and compare performance across the opening, middlegame, and endgame. **Performance by condition** groups your results by color, time control, opponent rating, and more. Expand **Analyzed games** to search and reopen a saved review.
 
-The first successful fetch sets your active player. Bulk Analysis, Dashboard,
-Openings, and Weaknesses share that player's saved filters and analysis preset.
-Use **Deselect player** on the player card to switch accounts. Saved reviews
-remain available when you select that player again.
+**Brilliant moves** sits directly below **Move classifications**. Each entry shows the move and the game it came from. Select **Review move** to jump to that exact position.
 
-Open a finished game from your active player's Chess.com or Lichess history in
-**Games** to save its review to the same library automatically. Reviews outside
-the current filters appear when you broaden the sample. Use the accuracy chart
-in **Dashboard** to inspect a point or period. **Openings** shows opening-phase move metrics separately from the
-whole-game results. **Weaknesses** ranks patterns supported by legal engine
-lines in at least two games. Open a move in the original Game Review or choose
-**Retry position** to attempt it before revealing the best line.
+![Brilliant Moves panel with move notation, opponent, date, and a link to review the exact move](docs/screenshots/brilliant-moves.webp)
 
-For long runs outside the browser:
+<details>
+<summary>See phase and condition breakdowns</summary>
+
+![Opening, middlegame, and endgame accuracy above a comparison of wins, draws, and losses](docs/screenshots/dashboard-performance.webp)
+
+</details>
+
+### Opening repertoire
+
+Browse the openings you actually play. Filter by opening name or ECO code and split the repertoire by color. The selected opening shows its board position, opening accuracy, and game results. Use **Review example game** to open a saved game at the opening position.
+
+![Opening repertoire with a searchable list, selected opening statistics, and a board preview](docs/screenshots/opening-repertoire.webp)
+
+### What to practice next
+
+**Weaknesses** finds recurring patterns supported by engine lines in at least two games. Pick a topic and browse the original positions. **Practice position** lets you try a better move before revealing the answer. **Review move** opens the same position in Game Review.
+
+![Practice view with a recurring weakness, a position from a saved game, and practice and review buttons](docs/screenshots/practice-plan.webp)
+
+### Bulk Analysis
+
+Open **Bulk Analysis** above the player card to fetch and select games, change filters, manage the queue, or import analyses. The launcher shows how many distinct games are cached for the active player. While a batch runs, it shows live progress and you can keep using the app with the panel closed.
+
+Choose a preset and worker count before starting a batch. **Pause** stops the current search. **Resume** restarts that game and reuses compatible analyses already saved. After a reload, use **Resume** to continue an unfinished batch.
+
+![Bulk Analysis panel with shared filters, the fetched game selection, and shortcuts for the queue and import](docs/screenshots/bulk-analysis.webp)
+
+Analytics screenshots show 30 games from IMRosen’s public Chess.com history.
+
+<details>
+<summary>Run a batch from the command line</summary>
+
+After [setting up the project locally](#-run-it-locally), run:
 
 ```sh
 npm run analyze:player -- chesscom YOUR_USERNAME --time rapid --limit 100 --preset fast --out rapid.jsonl
@@ -89,7 +85,29 @@ library. Use files generated by the CLI version that matches the browser app.
 See [analytics architecture and validation](docs/player-analytics.md) for metric
 definitions, storage behavior, supported training patterns, and test commands.
 
-## ✨ Features
+</details>
+
+## Single-game review
+
+Open a game from Chess.com or Lichess, paste a PGN, or use a supported game link. See move classifications and accuracy for both players, jump to key moments, and try alternate moves with live Stockfish feedback.
+
+![Desktop Game Review showing the chessboard, evaluation graph, and move-by-move coach](docs/screenshots/desktop-review.png)
+
+<details>
+<summary>See the mobile walkthrough</summary>
+
+<div align="center">
+
+<img src="docs/demo.gif" alt="Mobile demo opening a game and stepping through a Great move and a mistake" width="320" />
+
+| Pick a game | Summary | Review | Details |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/phone-list.png" width="200" alt="Game list" /> | <img src="docs/screenshots/phone-summary.png" width="200" alt="Game summary with accuracy" /> | <img src="docs/screenshots/phone-review.png" width="200" alt="Move-by-move review" /> | <img src="docs/screenshots/phone-details.png" width="200" alt="Explanation and engine lines" /> |
+
+</div>
+</details>
+
+### Review features
 
 <table>
 <tr>
@@ -215,9 +233,9 @@ With the plain Lichess formula, the average gap was 5.6 points on the fitting se
 Requires **Node.js 20+**.
 
 ```bash
-git clone https://github.com/ritstar/chess-game-review.git
+git clone https://github.com/agathiya-r/chess-game-review.git
 cd chess-game-review
-npm install
+npm ci
 npm run dev        # → http://localhost:3000
 ```
 
@@ -238,14 +256,17 @@ components/
   App.tsx           Home screen, game search and routing between views
   home/             Game source picker and game list
   review/           Board, eval bar and graph, move list, coach, engine lines, summary
+  analytics/        Bulk Analysis, dashboard, opening repertoire and practice views
 hooks/
   useGameReview.ts  Runs the two-pass analysis, streams results and caches finished reviews
   useExplorer.ts    Live engine and ratings for moves tried on the board
+  useAnalytics.ts   Browser analysis library, batch state and progress
 lib/
   engine/           UCI parsing and the Stockfish worker pool
   analysis/         Two-pass pipeline, classification, motifs and coach text, tactics (SEE),
                     phases, accuracy, openings
   games/            Chess.com / Lichess API clients and PGN parsing
+  analytics/        Saved analyses, batch runner, metrics, filters and JSONL import
   review/           Board navigation state (game moves and explored lines)
   sound.ts, haptics.ts  Board feedback
 public/stockfish/   Stockfish 17.1 lite, single-threaded WASM build
@@ -269,7 +290,7 @@ The app is static apart from Next.js itself, so it runs anywhere Next.js does (V
 <a href="https://github.com/ritstar"><img src="https://github.com/ritstar.png" width="72" alt="ritstar" align="left" style="border-radius:50%; margin-right:16px" /></a>
 
 **[@ritstar](https://github.com/ritstar)**<br />
-If this helped your chess, consider giving the repo a ⭐. Bugs and ideas are welcome in [issues](https://github.com/ritstar/chess-game-review/issues).
+If this helped your chess, consider giving the repo a ⭐. Bugs and ideas are welcome in [issues](https://github.com/agathiya-r/chess-game-review/issues).
 
 <br clear="left" />
 

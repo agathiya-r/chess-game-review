@@ -42,14 +42,14 @@ export function GameLoader(props: GameLoaderProps) {
     const c = props.collapsed;
     return (
       <div className="card flex items-center gap-3 px-3.5 py-2.5">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-3 text-[15px] font-bold" aria-hidden>
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-3 text-sm font-bold" aria-hidden>
           {c.username.charAt(0).toUpperCase()}
         </span>
         <span className="min-w-0 flex-1 leading-tight">
-          <span className="block truncate text-[15px] font-semibold">{c.username}</span>
-          <span className="block text-[12px] text-muted">{c.source === 'chesscom' ? 'Chess.com' : 'Lichess'}</span>
+          <span className="block truncate text-sm font-semibold">{c.username}</span>
+          <span className="block text-xs text-muted">{c.source === 'chesscom' ? 'Chess.com' : 'Lichess'}</span>
         </span>
-        <button type="button" className="btn btn-ghost border border-line px-3 py-2 text-[13px]" onClick={c.onExpand}>
+        <button type="button" className="btn btn-ghost border border-line px-3 py-2 text-sm" onClick={c.onExpand}>
           <Search size={15} /> Change
         </button>
       </div>
@@ -57,7 +57,7 @@ export function GameLoader(props: GameLoaderProps) {
   }
 
   return (
-    <div className="card p-2 shadow-[0_10px_40px_rgba(0,0,0,.25)]">
+    <div className="card p-2">
       <div className="flex gap-1 rounded-lg bg-bg/60 p-1" role="tablist" aria-label="Game source">
         {TABS.map((t) => (
           <button
@@ -91,7 +91,7 @@ export function GameLoader(props: GameLoaderProps) {
               placeholder={'Paste a PGN or a Lichess game link…\n\n1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 …'}
               rows={6}
               spellCheck={false}
-              className="input scroll-thin w-full resize-y font-mono text-[16px] sm:text-[13px]"
+              className="input scroll-thin w-full resize-y font-mono text-base"
               aria-label="PGN or game link"
             />
             <div className="flex gap-2">
@@ -122,7 +122,7 @@ export function GameLoader(props: GameLoaderProps) {
             }}
           >
             <div className="flex gap-2">
-              <div className="relative flex-1">
+              <div className="relative min-w-0 flex-1">
                 <Search size={18} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-subtle" />
                 <input
                   value={username}
@@ -136,13 +136,13 @@ export function GameLoader(props: GameLoaderProps) {
                   className="input w-full pl-10"
                 />
               </div>
-              <button type="submit" className="btn btn-primary px-5" disabled={!username.trim() || loading}>
+              <button type="submit" className="btn btn-primary shrink-0" disabled={!username.trim() || loading}>
                 {loading ? 'Loading…' : 'Find games'}
               </button>
             </div>
             {recentHere.length > 0 && (
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-[12px] text-subtle">Recent:</span>
+                <span className="text-xs text-subtle">Recent:</span>
                 {recentHere.map((r) => (
                   <span key={r.username} className="chip pr-1">
                     <button type="button" onClick={() => onSearch(r.username)} className="hover:text-fg">

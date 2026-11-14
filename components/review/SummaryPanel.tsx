@@ -24,7 +24,7 @@ function ScoreBox({ value, color, digits = 1 }: { value: number | null | undefin
   return (
     <span
       className={cn(
-        'mx-auto block w-[4.25rem] rounded-md py-1 text-center text-[19px] leading-tight font-extrabold tabular-nums',
+        'mx-auto block w-[4.25rem] rounded-md py-1 text-center text-[19px] leading-tight font-bold tabular-nums',
         color === 'w' ? 'bg-[#f2f2f2] text-[#2a2825]' : 'bg-[#3e3b37] text-[#f2f2f2] ring-1 ring-white/10',
       )}
     >

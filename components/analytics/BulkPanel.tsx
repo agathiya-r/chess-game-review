@@ -137,17 +137,22 @@ export function BulkPanel({ analytics, initialAccount, profile, onProfileChange,
 
   return <div className="grid gap-5">
     <form id="bulk-game-filters" tabIndex={-1} className="grid gap-3" onSubmit={(e) => { e.preventDefault(); void search(); }}>
+      {!profile && <fieldset disabled={loading} className="grid min-w-0 grid-cols-2 gap-3">
+        <Field label="Platform"><select className="input" value={source} onChange={(e) => setAccount({ ...account, source: e.target.value as PlayerAccount['source'] })}>
+          <option value="chesscom">Chess.com</option><option value="lichess">Lichess</option>
+        </select></Field>
+        <Field label="Username"><input className="input min-w-0" value={username} placeholder="Player handle" required maxLength={40}
+          onChange={(e) => setAccount({ ...account, username: e.target.value })} /></Field>
+      </fieldset>}
+      <div className="bulk-fetch-actions">
+        <button className="btn btn-primary" type="submit" disabled={loading || !username.trim()}>Fetch games</button>
+        {loading && <button className="btn btn-ghost border border-line" type="button" onClick={() => request.current?.abort()}>Stop fetching</button>}
+        {message && <span role="status" className="text-sm text-muted">{message}</span>}
+      </div>
       <SampleDisclosure filters={filters} preset={profile ? titleCase(depth) : undefined} initiallyOpen
-        detail={profile ? 'Choose which games to fetch. These filters also apply to your dashboard.'
+        detail={profile ? 'These filters also apply to your dashboard.'
           : 'Fetch games to set your active player.'}>
         <fieldset disabled={loading} className="grid min-w-0 gap-3">
-          {!profile && <div className="grid grid-cols-2 gap-3">
-            <Field label="Platform"><select className="input" value={source} onChange={(e) => setAccount({ ...account, source: e.target.value as PlayerAccount['source'] })}>
-              <option value="chesscom">Chess.com</option><option value="lichess">Lichess</option>
-            </select></Field>
-            <Field label="Username"><input className="input min-w-0" value={username} placeholder="Player handle" required maxLength={40}
-              onChange={(e) => setAccount({ ...account, username: e.target.value })} /></Field>
-          </div>}
           <ProfileFilters values={filters} onChange={updateFilters} />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             <Field label="Latest matching games"><select className="input" value={count} onChange={(e) => setCount(e.target.value)}>{COUNTS.map((n) => <option key={n} value={n}>{n === 'all' ? 'All matching' : n === 'custom' ? 'Custom count' : Number(n).toLocaleString()}</option>)}</select></Field>
@@ -155,11 +160,6 @@ export function BulkPanel({ analytics, initialAccount, profile, onProfileChange,
           </div>
         </fieldset>
       </SampleDisclosure>
-      <div className="flex flex-wrap items-center gap-3">
-        <button className="btn btn-primary" type="submit" disabled={loading || !username.trim()}>Fetch games</button>
-        {loading && <button className="btn btn-ghost border border-line" type="button" onClick={() => request.current?.abort()}>Stop fetching</button>}
-        {message && <span role="status" className="text-sm text-muted">{message}</span>}
-      </div>
       {loadError && <p role="alert" className="text-sm text-danger">{loadError}</p>}
       {notice && <p className="text-sm text-muted">{notice}</p>}
       {profile && !loading && loadedKey && !currentSelection && <p className="text-sm text-muted">Fetch again to select games with the updated filters.</p>}

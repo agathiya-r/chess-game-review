@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { ChartNoAxesCombined, Gauge, Layers3, ListChecks, TrendingUp } from 'lucide-react';
-import { PageHero } from '@/components/PageHero';
 import { ClassificationIcon } from '@/components/ClassificationIcon';
 import type { Phase } from '@/lib/analysis/phases';
 import { CLASSIFICATION_LABEL, CLASSIFICATIONS } from '@/lib/analysis/types';
@@ -24,7 +23,7 @@ type DashboardPage = AnalyticsPage;
 const pageInfo = {
   dashboard: { title: 'Player dashboard', description: 'Track your accuracy, compare conditions, and open any game behind the numbers.' },
   openings: { title: 'Opening performance', description: 'See how you play in the opening and what happens in the rest of those games.' },
-  weaknesses: { title: 'Weaknesses & training', description: 'Find recurring mistakes in engine lines, then retry the positions yourself.' },
+  weaknesses: { title: 'Weaknesses & training', description: 'Practice recurring mistakes from your own games.' },
 };
 
 export function Dashboard({ rows, page, profile, onProfileChange, onBulk, onReview }: {
@@ -57,11 +56,11 @@ export function Dashboard({ rows, page, profile, onProfileChange, onBulk, onRevi
   const info = pageInfo[page];
 
   return <div className="grid gap-5">
-    <PageHero variant={page} title={info.title} description={info.description} />
+    <header className="analytics-heading"><h1>{info.title}</h1><p>{info.description}</p></header>
     {!profile ? <Section title="Choose your player" icon={<ListChecks size={20} />}>
-      <Empty><p>Set your Chess.com or Lichess username in Bulk Analysis to see your games here.</p>
+      <div className="max-w-prose text-sm text-muted"><p>Fetch games for your Chess.com or Lichess username to set up your analysis sample.</p>
         <button className="btn btn-primary mt-4" onClick={onBulk}><ListChecks size={16} /> Set up player</button>
-      </Empty>
+      </div>
     </Section> : <>
       <SampleDisclosure key={page} filters={profile.filters} preset={`${titleCase(profile.depth)}${spec && chosenVersion !== specKey(analysisSpec(spec.depth)) ? ' (archived)' : ''}`} detail={`${totals.n.toLocaleString()} of ${sample.length.toLocaleString()} saved games · ${totals.dateRange ? totals.dateRange.map(dateLabel).join(' – ') : 'No known dates in this sample'}`}>
         <ProfileFilters values={profile.filters} onChange={(filters) => onProfileChange({ ...profile, filters })} />
@@ -77,7 +76,17 @@ export function Dashboard({ rows, page, profile, onProfileChange, onBulk, onRevi
           <button className="btn btn-ghost border border-line" onClick={() => onProfileChange({ ...profile, filters: {} })}>Reset filters</button>
         </div>
       </SampleDisclosure>
-      {!matching.length ? <Empty>No analyzed games match these filters.</Empty> : page === 'openings' ? <OpeningRepertoire rows={matching} onReview={onReview} />
+      {!matching.length ? <Empty>
+        {sample.length ? <>
+          <p>No analyzed games match these filters.</p>
+          <button type="button" className="btn btn-ghost mt-2" onClick={() => onProfileChange({ ...profile, filters: {} })}>
+            Show all saved games
+          </button>
+        </> : <>
+          <p>No games saved with this analysis preset.</p>
+          <button type="button" className="btn btn-primary mt-3" onClick={onBulk}>Open Bulk Analysis</button>
+        </>}
+      </Empty> : page === 'openings' ? <OpeningRepertoire rows={matching} onReview={onReview} />
         : page === 'weaknesses' ? <PracticePlan rows={matching} onReview={onReview} />
         : <>
           <Metrics totals={totals} />

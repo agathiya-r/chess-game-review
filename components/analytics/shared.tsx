@@ -10,8 +10,8 @@ export const num = (n: number | null | undefined, decimals = 1) => n == null ? '
 export const pct = (n: number | null | undefined) => n == null ? '—' : `${n.toFixed(1)}%`;
 export const platform = (source: string) => source === 'chesscom' ? 'Chess.com' : 'Lichess';
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
-  return <label className="grid min-w-0 gap-1.5 text-xs font-semibold text-muted">{label}{children}</label>;
+export function Field({ label, children, className = '' }: { label: string; children: ReactNode; className?: string }) {
+  return <label className={`grid min-w-0 gap-1.5 text-xs font-semibold text-muted ${className}`}>{label}{children}</label>;
 }
 export function Section({ id, tabIndex, title, detail, icon, className, children }: {
   id?: string;

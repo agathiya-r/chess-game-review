@@ -104,7 +104,7 @@ export function MobileReview(p: MobileReviewProps) {
         <ArrowLeft size={22} />
       </button>
       <div className="min-w-0 flex-1 text-center">
-        <p className="truncate text-[16px] leading-tight font-extrabold">{p.mode === 'summary' ? 'Game Summary' : 'Game Review'}</p>
+        <p className="truncate text-[16px] leading-tight font-bold">{p.mode === 'summary' ? 'Game Summary' : 'Game Review'}</p>
         <p className="truncate text-[11.5px] leading-tight text-muted">
           {p.game.white.name} vs {p.game.black.name}
         </p>

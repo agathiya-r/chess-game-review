@@ -55,7 +55,7 @@ export function ActionBar({
         className={cn(
           'btn ml-1 flex-[1.6] rounded-xl px-2 whitespace-nowrap',
           compact ? 'h-11' : 'h-14',
-          primary.label.length > 8 ? 'text-[16px] font-extrabold sm:text-[18px]' : 'text-[19px] font-extrabold',
+          primary.label.length > 8 ? 'text-[16px] font-bold sm:text-[18px]' : 'text-[19px] font-bold',
           primary.tone === 'neutral' ? 'bg-surface-3 text-fg hover:bg-[#45423e]' : 'btn-primary',
         )}
       >

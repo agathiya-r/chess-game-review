@@ -417,7 +417,8 @@ export function ReviewScreen({ game, settings, onSettingsChange, onBack, saved, 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
-      if (t.closest('input, textarea, select, [contenteditable="true"]') || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.defaultPrevented || t.closest('dialog, input, textarea, select, [contenteditable="true"]') || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === ' ' && t.closest('a, button, summary')) return;
       const action = keyActions.current[e.key];
       if (!action) return;
       e.preventDefault();

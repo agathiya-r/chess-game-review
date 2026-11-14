@@ -442,7 +442,7 @@ export function Board({
               <span
                 // Keep the label on the board: below the square on the top rank, pulled in at the side files.
                 className={cn(
-                  'celebrate-label absolute rounded-full bg-white px-2.5 py-0.5 text-[clamp(11px,3.4vw,15px)] font-extrabold whitespace-nowrap shadow-md',
+                  'celebrate-label absolute rounded-full bg-white px-2.5 py-0.5 text-[clamp(11px,3.4vw,15px)] font-bold whitespace-nowrap shadow-md',
                   labelSpot.row === 0 ? '-bottom-[30%]' : '-top-[30%]',
                   labelSpot.col === 0 ? 'celebrate-label-left left-0' : labelSpot.col === 7 ? 'celebrate-label-right right-0' : 'left-1/2',
                 )}

@@ -26,7 +26,7 @@ export function CoachAvatar({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-b from-[#95c95d] to-[#5d8a2f] p-1.5 shadow-lg',
+        'flex shrink-0 items-center justify-center rounded-2xl bg-accent p-1.5 shadow-lg',
         className,
       )}
       aria-hidden
@@ -90,7 +90,7 @@ export function CoachBubble({
           </span>
         )}
         <div className="flex shrink-0 items-start justify-between gap-2">
-          <p className="flex min-w-0 items-center gap-2 text-[17px] leading-snug font-extrabold">
+          <p className="flex min-w-0 items-center gap-2 text-[17px] leading-snug font-bold">
             {icon && <ClassificationIcon classification={icon} size={26} className="shrink-0" />}
             <span className={cn('min-w-0', fixed && 'line-clamp-2')}>
               <Headline san={san} headline={headline} />
@@ -159,7 +159,7 @@ function CompactBubble({ message, onOpen, className }: { message: CoachMessage; 
         )}
         <span className="flex min-w-0 items-center gap-1.5">
           {icon && <ClassificationIcon classification={icon} size={20} className="shrink-0" />}
-          <span className="min-w-0 flex-1 truncate text-[15px] leading-tight font-extrabold">
+          <span className="min-w-0 flex-1 truncate text-[15px] leading-tight font-bold">
             <Headline san={san} headline={headline} />
           </span>
         </span>

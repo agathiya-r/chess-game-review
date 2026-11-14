@@ -157,12 +157,29 @@ test('selects a sample, pauses, reloads, saves, filters, and retries an engine-b
   await page.getByRole('button', { name: 'Try this position', exact: true }).click();
   await expect(page).toHaveURL(/retry=1/);
   await expect(page.getByText('Find a better move', { exact: true }).first()).toBeVisible();
+  const explanation = page.getByRole('button', { name: 'Show full explanation' });
+  if (await explanation.isVisible()) {
+    await explanation.focus();
+    await page.keyboard.press('Space');
+    const sheet = page.getByRole('dialog');
+    await expect(sheet.getByRole('button', { name: 'Close' })).toBeFocused();
+    await page.keyboard.press('Tab');
+    expect(await sheet.evaluate((dialog) => dialog.contains(document.activeElement) || document.activeElement === document.body)).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(sheet).toBeHidden();
+    await expect(explanation).toBeFocused();
+    await expect(page.getByText('Find a better move', { exact: true }).first()).toBeVisible();
+  }
   expect(reviewEngineRequests).toBe(0);
   expect(errors).toEqual([]);
 });
 
 test('retains the single-game PGN workflow', async ({ page }) => {
   await page.goto('/');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('link', { name: 'Skip to content' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('main')).toBeFocused();
   await page.getByRole('tab', { name: 'PGN / link', exact: true }).click();
   await page.locator('textarea').fill(MATE);
   await page.getByRole('button', { name: 'Review game', exact: true }).click();

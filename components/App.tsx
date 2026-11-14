@@ -1,6 +1,6 @@
 'use client';
 
-import { Activity, BookOpen, Cpu, Crosshair, Gamepad2, Github, Lock, RefreshCw, Sparkles } from 'lucide-react';
+import { Activity, BookOpen, Crosshair, Gamepad2, Github, Lock, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GameList, GameListSkeleton } from '@/components/home/GameList';
 import { GameLoader, type LoaderSource, type RecentSearch } from '@/components/home/GameLoader';
@@ -382,11 +382,12 @@ export function App() {
 
   return (
     <div className={cn('app-shell min-h-dvh', !game && 'app-shell-with-rail')}>
+      <a className="app-skip" href="#main-content">Skip to content</a>
       <header className={cn('app-navigation', game && 'hidden lg:block')}>
         <div className="app-brand-row">
           <button type="button" onClick={() => openPage('games')} className="flex min-h-11 shrink-0 items-center gap-2.5" aria-label="Home">
             <Logo />
-            <span className="text-[18px] font-extrabold tracking-tight">Game<span className="text-accent">Review</span></span>
+            <span className="text-lg font-bold tracking-tight">Game<span className="text-accent">Review</span></span>
           </button>
           {game ? <span className="text-xs text-muted">Stockfish 17 · runs locally</span>
             : <span className="app-engine-status">Stockfish 17</span>}
@@ -398,14 +399,13 @@ export function App() {
           </nav>
           <div className="app-profile">
             <BulkAnalysisLauncher analytics={analytics} savedCount={savedCount} open={bulkOpen} onOpen={openBulk} />
-            {profileReady && (page !== 'games' || profile) &&
-              <ActivePlayer profile={profile} onSetup={openBulk} onClear={deselect} />}
+            {profileReady && profile && <ActivePlayer profile={profile} onClear={deselect} />}
             {profileError && <p role="alert" className="mt-2 text-xs text-danger">{profileError}</p>}
           </div>
         </>}
       </header>
 
-      <main className="app-main min-w-0">
+      <main id="main-content" tabIndex={-1} className="app-main min-w-0">
         {(openingReview || reviewError) && <p role={reviewError ? 'alert' : 'status'} className="mx-auto max-w-6xl px-4 pt-4 text-sm text-muted">{reviewError || 'Opening saved review…'}</p>}
         {reviewGame && <ReviewScreen key={libraryReview ? `${libraryReview.row.id}:${reviewGame.perspective}:${libraryReview.ply}:${libraryReview.retry}` : reviewGame.id}
           game={reviewGame} settings={reviewSettings}
@@ -419,10 +419,10 @@ export function App() {
             : <p role={analytics.error ? 'alert' : 'status'} className="text-sm text-muted">{analytics.error ?? 'Loading the local library…'}</p>}
         </div>}
         {!game && page === 'games' && (
-          <div className={cn('mx-auto w-full max-w-3xl px-4 pb-16', searched ? 'pt-4 sm:pt-8' : 'pt-8 sm:pt-16')}>
+          <div className={cn('mx-auto w-full max-w-3xl px-4 pb-16', searched ? 'pt-4 sm:pt-8' : 'pt-4 sm:pt-12')}>
             {!searched && <div className="mb-5 sm:mb-7">
-              <PageHero variant="review" title="Review a game"
-                description="Find a Chess.com or Lichess game and see what happened move by move." />
+              <PageHero title="Review a game"
+                description="Find a Chess.com or Lichess game, or review a game from a PGN." />
             </div>}
 
             <GameLoader
@@ -468,7 +468,7 @@ export function App() {
               ) : (games.length > 0 || cursor) && source !== 'pgn' ? (
                 <>
                   <div className="mb-3 flex items-center justify-between">
-                    <h2 className="text-[13px] font-bold tracking-wider text-subtle uppercase">
+                    <h2 className="text-sm font-semibold text-muted">
                       {searched?.username}&apos;s recent games
                     </h2>
                     <button
@@ -490,7 +490,10 @@ export function App() {
                   />
                 </>
               ) : (
-                !error && <Features />
+                !error && <p className="mx-auto flex max-w-prose items-start gap-2 text-sm text-muted">
+                  <Lock size={16} className="mt-0.5 shrink-0 text-accent-strong" aria-hidden="true" />
+                  Stockfish runs on your device, and saved reviews stay in this browser.
+                </p>
               )}
             </div>
           </div>
@@ -506,7 +509,7 @@ export function App() {
 
       <footer
         className={cn(
-          'app-footer border-t border-line/70 px-4 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center text-[12px] text-subtle',
+          'app-footer border-t border-line/70 px-4 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-center text-xs text-subtle',
           game && 'hidden lg:block',
         )}
       >
@@ -519,7 +522,7 @@ export function App() {
           Lichess openings
         </a>{' '}
         dataset. Not affiliated with Chess.com or Lichess.
-        <div className="mt-3 flex items-center justify-center gap-3 text-[13px] text-muted">
+        <div className="mt-3 flex items-center justify-center gap-3 text-sm text-muted">
           <a className="inline-flex items-center gap-1.5 hover:text-fg" href={AUTHOR_URL} target="_blank" rel="noreferrer">
             <Github size={15} /> Made by @{AUTHOR}
           </a>
@@ -529,25 +532,6 @@ export function App() {
           </a>
         </div>
       </footer>
-    </div>
-  );
-}
-
-function Features() {
-  const items = [
-    { icon: Sparkles, title: 'Real explanations', text: 'Not just "?? Blunder" — see the fork, the hanging piece or the mate you missed.' },
-    { icon: Cpu, title: 'Fast, parallel engine', text: 'Stockfish 17 runs on several cores at once. Reviews take seconds, not minutes.' },
-    { icon: Lock, title: 'Private', text: 'Analysis and saved results stay in your browser. No account or uploads.' },
-  ];
-  return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      {items.map(({ icon: Icon, title, text }) => (
-        <div key={title} className="card p-4">
-          <Icon size={20} className="text-accent" />
-          <p className="mt-2 text-[14px] font-semibold">{title}</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-muted">{text}</p>
-        </div>
-      ))}
     </div>
   );
 }

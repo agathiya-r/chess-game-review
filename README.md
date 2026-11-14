@@ -26,7 +26,7 @@ Review a game move by move, track your accuracy over time, or practice positions
 
 ## Player analytics
 
-Choose a Chess.com or Lichess username in **Bulk Analysis**. The first successful fetch sets your active player. Bulk Analysis, Dashboard, Openings, and Weaknesses share that player’s filters and analysis preset. Open **Analysis sample** on any analytics page to adjust the date range, time control, color, result, or other filters.
+Choose a Chess.com or Lichess username in **Bulk Analysis**. The first successful fetch sets your active player. Bulk Analysis, Dashboard, Openings, and Weaknesses share that player’s filters and analysis preset. Open **Analysis sample** on any analytics page to adjust the date range, time control, color, result, or other filters. If the filters hide all saved games for the selected preset, use **Show all saved games** to clear them.
 
 Finished reviews from **Games** join the same library when they belong to the active player. Change the sample filters to see reviews saved outside the current selection. To switch accounts, use **Deselect player** on the player card and fetch games for a new username. The previous player’s reviews are available when you switch back.
 
@@ -61,7 +61,7 @@ Select **Try this position** to open the retry board, **Show best move** to see 
 
 ### Bulk Analysis
 
-Open **Bulk Analysis** above the player card to fetch and select games, change filters, manage the queue, or import analyses. The launcher shows how many distinct games are cached for the active player. While a batch runs, it shows live progress and you can keep using the app with the panel closed.
+Open **Bulk Analysis** above the player card to fetch and select games, change filters, manage the queue, or import analyses. **Fetch games** stays visible while you scroll through the filters. The launcher shows how many distinct games are cached for the active player. While a batch runs, it shows live progress and you can keep using the app with the panel closed.
 
 Choose a preset and worker count before starting a batch. **Pause** stops the current search. **Resume** restarts that game and reuses compatible analyses already saved. After a reload, use **Resume** to continue an unfinished batch.
 
@@ -93,18 +93,16 @@ definitions, storage behavior, supported training patterns, and test commands.
 
 Open a game from Chess.com or Lichess, paste a PGN, or use a supported game link. See move classifications and accuracy for both players, jump to key moments, and try alternate moves with live Stockfish feedback.
 
-![Desktop Game Review showing the chessboard, evaluation graph, and move-by-move coach](docs/screenshots/desktop-review.png)
+![Desktop Game Review showing the chessboard, evaluation graph, and move-by-move coach](docs/screenshots/desktop-review.webp)
 
 <details>
 <summary>See the mobile walkthrough</summary>
 
 <div align="center">
 
-<img src="docs/demo.gif" alt="Mobile demo opening a game and stepping through a Great move and a mistake" width="320" />
-
 | Pick a game | Summary | Review | Details |
 |:---:|:---:|:---:|:---:|
-| <img src="docs/screenshots/phone-list.png" width="200" alt="Game list" /> | <img src="docs/screenshots/phone-summary.png" width="200" alt="Game summary with accuracy" /> | <img src="docs/screenshots/phone-review.png" width="200" alt="Move-by-move review" /> | <img src="docs/screenshots/phone-details.png" width="200" alt="Explanation and engine lines" /> |
+| <img src="docs/screenshots/phone-list.webp" width="200" alt="Game list" /> | <img src="docs/screenshots/phone-summary.webp" width="200" alt="Game summary with accuracy" /> | <img src="docs/screenshots/phone-review.webp" width="200" alt="Move-by-move review" /> | <img src="docs/screenshots/phone-details.webp" width="200" alt="Explanation and engine lines" /> |
 
 </div>
 </details>

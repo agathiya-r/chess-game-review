@@ -71,7 +71,7 @@ export function BulkAnalysisDialog({ open, onClose, children }: {
       <div className="bulk-dialog-shell">
         <header className="bulk-dialog-header">
           <div className="flex items-center justify-between gap-2">
-            <h2 id="bulk-dialog-title" className="flex items-center gap-2.5 text-lg font-extrabold tracking-tight">
+            <h2 id="bulk-dialog-title" className="flex items-center gap-2.5 text-lg font-bold tracking-tight">
               <ListChecks size={20} className="text-accent-strong" aria-hidden="true" /> Bulk Analysis
             </h2>
             <button type="button" className="icon-btn size-9" aria-label="Close Bulk Analysis" onClick={onClose}>

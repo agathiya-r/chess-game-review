@@ -16,8 +16,8 @@ export function ProfileFilters({ values, onChange }: {
     <Field label="Rated status"><select className="input" value={values.rated === undefined ? '' : String(values.rated)} onChange={(e) => update({ rated: e.target.value ? e.target.value === 'true' : undefined })}>
       <option value="">Any status</option><option value="true">Rated only</option><option value="false">Unrated only</option>
     </select></Field>
-    <Field label="From (UTC)"><input className="input" type="date" max={values.through} value={values.from ?? ''} onChange={(e) => update({ from: e.target.value || undefined })} /></Field>
-    <Field label="Through (UTC)"><input className="input" type="date" min={values.from} value={values.through ?? ''} onChange={(e) => update({ through: e.target.value || undefined })} /></Field>
+    <Field label="From (UTC)" className="profile-date-field"><input className="input" type="date" max={values.through} value={values.from ?? ''} onChange={(e) => update({ from: e.target.value || undefined })} /></Field>
+    <Field label="Through (UTC)" className="profile-date-field"><input className="input" type="date" min={values.from} value={values.through ?? ''} onChange={(e) => update({ through: e.target.value || undefined })} /></Field>
     <Field label="Color"><select className="input" value={values.color ?? ''} onChange={(e) => update({ color: (e.target.value || undefined) as Color | undefined })}>
       <option value="">Both colors</option><option value="w">White</option><option value="b">Black</option>
     </select></Field>
